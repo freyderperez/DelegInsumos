@@ -1,0 +1,71 @@
+{
+  "sistema": {
+    "nombre": "DelegInsumos",
+    "version": "1.0.0",
+    "descripcion": "Sistema de Gestión de Insumos de Oficina",
+    "autor": "KiloCode System"
+  },
+  "base_datos": {
+    "archivo": "./data/deleginsumos.db",
+    "backup_automatico": true,
+    "backup_intervalo_horas": 24,
+    "max_backups_diarios": 7,
+    "max_backups_semanales": 4
+  },
+  "interfaz": {
+    "tema": "cosmo",
+    "ventana_ancho": 1200,
+    "ventana_altura": 800,
+    "ventana_redimensionable": true,
+    "colores": {
+      "primario": "#2196F3",
+      "secundario": "#FFF",
+      "exito": "#4CAF50",
+      "advertencia": "#FF9800",
+      "error": "#F44336"
+    }
+  },
+  "alertas": {
+    "verificar_stock_inicio": true,
+    "umbral_stock_bajo_porcentaje": 20,
+    "umbral_stock_critico": 0,
+    "umbral_entregas_frecuentes_dia": 5,
+    "mostrar_notificaciones_dashboard": true
+  },
+  "reportes": {
+    "directorio": "./reportes/",
+    "formato_fecha_archivo": "%Y%m%d_%H%M%S",
+    "incluir_graficos": true,
+    "colores_institucionales": {
+      "azul_principal": "#2196F3",
+      "azul_secundario": "#1976D2",
+      "gris": "#757575",
+      "blanco": "#FFFFFF"
+    },
+    "pdf": {
+      "margenes": {
+        "superior": 72,
+        "inferior": 72,
+        "izquierdo": 72,
+        "derecho": 72
+      },
+      "fuente_titulo": "Helvetica-Bold",
+      "fuente_texto": "Helvetica",
+      "tamaño_fuente_titulo": 16,
+      "tamaño_fuente_texto": 10
+    }
+  },
+  "logging": {
+    "nivel": "INFO",
+    "archivo": "./logs/deleginsumos.log",
+    "max_tamaño_mb": 10,
+    "cantidad_respaldos": 5,
+    "formato": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+  "seguridad": {
+    "validar_entrada_datos": true,
+    "sanitizar_campos_texto": true,
+    "log_operaciones_criticas": true,
+    "backup_antes_operaciones_masivas": true
+  }
+}

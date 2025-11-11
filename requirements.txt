@@ -1,0 +1,21 @@
+# DelegInsumos - Gestión de Insumos de Oficina
+# Dependencias para funcionamiento offline completo
+
+# Interfaz gráfica moderna
+ttkbootstrap>=1.10.1
+
+# Generación de reportes PDF
+reportlab>=4.0.4
+
+# Manipulación de archivos Excel
+openpyxl>=3.1.2
+
+# Análisis y manipulación de datos
+pandas>=2.0.3
+
+# Generación de gráficos
+matplotlib>=3.7.2
+
+# Utilidades adicionales
+python-dateutil>=2.8.2
+Pillow>=10.0.0
