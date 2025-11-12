@@ -21,7 +21,8 @@ class Entrega:
     """
     
     # Campos principales
-    id: Optional[str] = None
+    id: Optional[int] = None
+    codigo: Optional[str] = None
     empleado_id: int = 0
     insumo_id: int = 0
     cantidad: int = 0
@@ -42,9 +43,9 @@ class Entrega:
     
     def __post_init__(self):
         """Validaciones y conversiones post-inicialización"""
-        # Generar ID si no se proporciona
-        if not self.id:
-            self.id = generar_id("ENT")
+        # Generar código público si no se proporciona
+        if not self.codigo:
+            self.codigo = generar_id("ENT")
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Entrega':
@@ -64,6 +65,7 @@ class Entrega:
         
         return cls(
             id=data.get('id'),
+            codigo=data.get('codigo'),
             empleado_id=data.get('empleado_id', 0),
             insumo_id=data.get('insumo_id', 0),
             cantidad=data.get('cantidad', 0),
@@ -95,6 +97,7 @@ class Entrega:
         """
         result = {
             'id': self.id,
+            'codigo': self.codigo,
             'empleado_id': self.empleado_id,
             'insumo_id': self.insumo_id,
             'cantidad': self.cantidad,
@@ -284,7 +287,8 @@ class Entrega:
         priority = self.get_priority_level()
         
         return {
-            'id': str(self.id) if self.id else 'N/A',
+            'id': str(self.id) if self.id is not None else 'N/A',
+            'codigo': self.codigo or 'N/A',
             'fecha_entrega': format_date(self.fecha_entrega, "datetime") if self.fecha_entrega else 'N/A',
             'fecha_corta': format_date(self.fecha_entrega, "short") if self.fecha_entrega else 'N/A',
             'empleado_completo': f"{self.empleado_nombre} ({self.empleado_cedula})",

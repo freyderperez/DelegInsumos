@@ -275,12 +275,23 @@ class MicroEntregasService(LoggerMixin):
         """
         self.logger.debug(f"Obteniendo entregas del {fecha_inicio} al {fecha_fin}")
         
-        # Validar rango de fechas
+        # Normalizar a tipo date en caso de recibir datetime
+        try:
+            if isinstance(fecha_inicio, datetime):
+                fecha_inicio = fecha_inicio.date()
+            if isinstance(fecha_fin, datetime):
+                fecha_fin = fecha_fin.date()
+        except Exception:
+            # Si falla la normalización, continuar con los valores originales
+            pass
+        
+        # Validar rango de fechas (seguro con tipos date)
         if fecha_inicio > fecha_fin:
             raise BusinessLogicException("La fecha de inicio no puede ser mayor a la fecha de fin")
         
-        if fecha_fin > date.today():
-            fecha_fin = date.today()  # No mostrar fechas futuras
+        today = date.today()
+        if fecha_fin > today:
+            fecha_fin = today  # No mostrar fechas futuras
         
         # Obtener entregas
         entregas_data = self._repository.get_by_date_range(fecha_inicio, fecha_fin)

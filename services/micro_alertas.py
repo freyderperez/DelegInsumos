@@ -59,6 +59,7 @@ class Alert:
             'id': self.id,
             'alert_type': self.alert_type.value,
             'severity': self.severity.value,
+            'severity_label': self.get_severity_label(),
             'title': self.title,
             'message': self.message,
             'entity_id': self.entity_id,
@@ -95,6 +96,16 @@ class Alert:
             AlertType.DATA_INCONSISTENCY: "🔍"
         }
         return icon_map.get(self.alert_type, "📋")
+
+    def get_severity_label(self) -> str:
+        """Etiqueta de severidad en español para UI/Reportes"""
+        mapping = {
+            AlertSeverity.CRITICAL: "Crítica",
+            AlertSeverity.HIGH: "Alta",
+            AlertSeverity.MEDIUM: "Media",
+            AlertSeverity.LOW: "Baja",
+        }
+        return mapping.get(self.severity, "Desconocida")
     
     def requires_action(self) -> bool:
         """Determina si la alerta requiere acción del usuario"""
@@ -167,8 +178,8 @@ class MicroAlertasService(LoggerMixin):
             
             # Procesar alertas críticas
             for insumo in stock_alerts['criticas']:
-                alert_id = f"STOCK_CRITICO_{insumo['id']}"
-                if alert_id not in self.active_alerts:
+                key = self._make_alert_key(AlertType.STOCK_CRITICO, insumo['id'])
+                if key not in self.active_alerts:
                     alert = Alert(
                         alert_type=AlertType.STOCK_CRITICO,
                         severity=AlertSeverity.CRITICAL,
@@ -184,13 +195,13 @@ class MicroAlertasService(LoggerMixin):
                             'unidad_medida': insumo['unidad_medida']
                         }
                     )
-                    self._add_alert(alert)
+                    self._add_alert(alert, key)
                     new_alerts.append(alert)
             
             # Procesar alertas de stock bajo
             for insumo in stock_alerts['bajas']:
-                alert_id = f"STOCK_BAJO_{insumo['id']}"
-                if alert_id not in self.active_alerts:
+                key = self._make_alert_key(AlertType.STOCK_BAJO, insumo['id'])
+                if key not in self.active_alerts:
                     alert = Alert(
                         alert_type=AlertType.STOCK_BAJO,
                         severity=AlertSeverity.HIGH,
@@ -207,15 +218,15 @@ class MicroAlertasService(LoggerMixin):
                             'unidad_medida': insumo['unidad_medida']
                         }
                     )
-                    self._add_alert(alert)
+                    self._add_alert(alert, key)
                     new_alerts.append(alert)
             
             # Verificar stock excesivo
             insumos_data = micro_insumos.listar_insumos(active_only=True)
             for insumo_dict in insumos_data['insumos']:
                 if insumo_dict['cantidad_actual'] > insumo_dict['cantidad_maxima']:
-                    alert_id = f"STOCK_EXCESO_{insumo_dict['id']}"
-                    if alert_id not in self.active_alerts:
+                    key = self._make_alert_key(AlertType.STOCK_EXCESO, insumo_dict['id'])
+                    if key not in self.active_alerts:
                         alert = Alert(
                             alert_type=AlertType.STOCK_EXCESO,
                             severity=AlertSeverity.MEDIUM,
@@ -227,7 +238,7 @@ class MicroAlertasService(LoggerMixin):
                             entity_type='insumo',
                             data=insumo_dict
                         )
-                        self._add_alert(alert)
+                        self._add_alert(alert, key)
                         new_alerts.append(alert)
         
         except Exception as e:
@@ -276,8 +287,10 @@ class MicroAlertasService(LoggerMixin):
             # Crear alertas para entregas frecuentes
             for insumo_id, info in insumo_counts.items():
                 if info['count'] >= umbral_entregas_dia:
-                    alert_id = f"ENTREGAS_FRECUENTES_{insumo_id}_{date.today().isoformat()}"
-                    if alert_id not in self.active_alerts:
+                    # Evitar duplicados por día e insumo
+                    today_iso = date.today().isoformat()
+                    key = self._make_alert_key(AlertType.ENTREGAS_FRECUENTES, insumo_id, today_iso)
+                    if key not in self.active_alerts:
                         alert = Alert(
                             alert_type=AlertType.ENTREGAS_FRECUENTES,
                             severity=AlertSeverity.MEDIUM,
@@ -291,10 +304,10 @@ class MicroAlertasService(LoggerMixin):
                                 'cantidad_total': info['total_cantidad'],
                                 'categoria': info['categoria'],
                                 'umbral': umbral_entregas_dia,
-                                'fecha': date.today().isoformat()
+                                'fecha': today_iso
                             }
                         )
-                        self._add_alert(alert)
+                        self._add_alert(alert, key)
                         new_alerts.append(alert)
         
         except Exception as e:
@@ -387,11 +400,17 @@ class MicroAlertasService(LoggerMixin):
         
         return inconsistencies
     
-    def _add_alert(self, alert: Alert):
-        """Añade una alerta al sistema"""
-        self.active_alerts[alert.id] = alert
+    def _make_alert_key(self, alert_type: AlertType, entity_id: Optional[int] = None, extra: Optional[str] = None) -> str:
+        """Crea una llave determinística para deduplicar alertas"""
+        return f"{alert_type.value}:{entity_id or 'SYS'}:{extra or ''}"
+
+    def _add_alert(self, alert: Alert, key: Optional[str] = None):
+        """Añade una alerta al sistema usando una llave estable para evitar duplicados"""
+        if key is None:
+            key = self._make_alert_key(alert.alert_type, alert.entity_id)
+        self.active_alerts[key] = alert
         self.alert_history.append(alert)
-        self.logger.info(f"Nueva alerta añadida: {alert.title} (ID: {alert.id})")
+        self.logger.info(f"Nueva alerta añadida: {alert.title} (KEY: {key})")
     
     @service_exception_handler("MicroAlertasService")
     def obtener_alertas_activas(self, severity_filter: Optional[str] = None,

@@ -19,7 +19,7 @@ from services.micro_insumos import micro_insumos
 from models.insumo import Insumo
 from utils.logger import LoggerMixin, log_user_action
 from utils.helpers import (
-    format_currency, show_error_message, show_info_message, 
+    show_error_message, show_info_message,
     ask_yes_no, CATEGORIAS_INSUMOS, UNIDADES_MEDIDA
 )
 from utils.validators import validate_insumo_data
@@ -93,7 +93,7 @@ class InsumosTab(LoggerMixin):
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
-            command=self.refresh_data,
+            command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
         
@@ -470,10 +470,14 @@ class InsumosTab(LoggerMixin):
         self.update_stock_btn.pack_forget()
         self.delete_btn.pack_forget()
     
-    def refresh_data(self):
-        """Actualiza la lista de insumos"""
+    def refresh_data(self, quick: bool = False):
+        """Actualiza la lista de insumos.
+        
+        Args:
+            quick: Si True, recarga rápida (solo datos y estadísticas, sin reconstruir UI).
+        """
         try:
-            self.logger.debug("Actualizando datos de insumos")
+            self.logger.debug(f"Actualizando datos de insumos (quick={quick})")
             
             # Obtener lista de insumos con estado
             result = micro_insumos.listar_insumos(active_only=True, include_status=True)
@@ -486,9 +490,10 @@ class InsumosTab(LoggerMixin):
             self._update_statistics(result)
             
             if hasattr(self.app, 'update_status'):
-                self.app.update_status("Lista de insumos actualizada", "success")
+                msg = "Lista de insumos actualizada (rápida)" if quick else "Lista de insumos actualizada"
+                self.app.update_status(msg, "success")
             
-            self.logger.info(f"Lista de insumos actualizada: {len(self.insumos_list)} items")
+            self.logger.info(f"Lista de insumos actualizada: {len(self.insumos_list)} items (quick={quick})")
             
         except Exception as e:
             self.logger.error(f"Error actualizando datos de insumos: {e}")
@@ -549,8 +554,8 @@ class InsumosTab(LoggerMixin):
             for item in self.insumos_tree.get_children():
                 self.insumos_tree.delete(item)
             
-            # Agregar insumos
-            for insumo in insumos:
+            # Agregar insumos (con zebra para filas en estado normal)
+            for idx, insumo in enumerate(insumos):
                 # Determinar estado de stock y color
                 current = insumo['cantidad_actual']
                 minimum = insumo['cantidad_minima']
@@ -572,8 +577,11 @@ class InsumosTab(LoggerMixin):
                 # Formatear valores
                 stock_display = f"{current} {insumo['unidad_medida']}"
                 minimo_display = f"{minimum} {insumo['unidad_medida']}"
-                precio_display = "N/A"  # No hay precio
                 proveedor_display = insumo.get('proveedor', 'No especificado')[:20]
+
+                # Zebra tag solo para filas en estado normal
+                zebra_tag = "zebra_even" if idx % 2 == 0 else "zebra_odd"
+                tags_to_apply = (tag,) if tag in ("critico", "bajo", "exceso") else (zebra_tag,)
 
                 # Insertar en tree
                 item_id = self.insumos_tree.insert(
@@ -587,17 +595,19 @@ class InsumosTab(LoggerMixin):
                         estado,
                         proveedor_display
                     ),
-                    tags=(tag,)
+                    tags=tags_to_apply
                 )
                 
                 # Guardar datos completos en el item (sin usar columnas ocultas)
                 self._item_data[item_id] = insumo
             
-            # Configurar colores por tag
+            # Configurar colores por tag (estados especiales)
             self.insumos_tree.tag_configure("critico", background="#FFCDD2", foreground="#B71C1C")  # Rojo claro
             self.insumos_tree.tag_configure("bajo", background="#FFE0B2", foreground="#BF360C")     # Naranja claro
             self.insumos_tree.tag_configure("exceso", background="#F5F5F5", foreground="#616161")   # Gris
-            self.insumos_tree.tag_configure("normal", background="#E8F5E8", foreground="#2E7D32")   # Verde claro
+            # Zebra pattern para filas normales
+            self.insumos_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000")
+            self.insumos_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")
             
         except Exception as e:
             self.logger.error(f"Error actualizando visualización del tree: {e}")

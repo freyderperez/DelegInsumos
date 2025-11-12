@@ -25,6 +25,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.chart import PieChart, BarChart
 from openpyxl.chart import Reference
+from openpyxl.utils import get_column_letter
 
 # Gráficos
 import matplotlib.pyplot as plt
@@ -150,6 +151,9 @@ class ReportesService(LoggerMixin):
             # Elementos del reporte
             elements = []
             styles = getSampleStyleSheet()
+            # Estandarizar tipografías en todo el documento
+            styles['Normal'].fontName = 'Helvetica'
+            styles['Heading2'].fontName = 'Helvetica-Bold'
             
             # Título principal
             title_style = ParagraphStyle(
@@ -168,6 +172,7 @@ class ReportesService(LoggerMixin):
                 'Summary',
                 parent=styles['Normal'],
                 fontSize=11,
+                fontName='Helvetica',
                 textColor=self.colors.GRIS
             )
             
@@ -523,6 +528,9 @@ class ReportesService(LoggerMixin):
             
             elements = []
             styles = getSampleStyleSheet()
+            # Estandarizar tipografías en todo el documento
+            styles['Normal'].fontName = 'Helvetica'
+            styles['Heading2'].fontName = 'Helvetica-Bold'
             
             # Título
             title_style = ParagraphStyle(
@@ -551,6 +559,7 @@ class ReportesService(LoggerMixin):
                 'Summary',
                 parent=styles['Normal'],
                 fontSize=11,
+                fontName='Helvetica',
                 textColor=self.colors.GRIS
             )
             
@@ -691,20 +700,22 @@ class ReportesService(LoggerMixin):
                 # Detalle de Entregas (Top 20 recientes)
                 elements.append(Paragraph("Detalle de Entregas (Top 20 recientes)", styles['Heading2']))
                 recientes = sorted(entregas_list, key=lambda e: e.get('fecha_entrega', ''), reverse=True)[:20]
-                det_table_data = [['Empleado', 'Insumo', 'Cantidad', 'Unidad', 'Fecha']]
+                # Incluir código público de entrega (ENT-XXXX) para la trazabilidad
+                det_table_data = [['Código', 'Empleado', 'Insumo', 'Cantidad', 'Unidad', 'Fecha']]
                 for e in recientes:
                     try:
                         f = datetime.fromisoformat(e['fecha_entrega'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
                     except Exception:
                         f = e.get('fecha_entrega', '')
                     det_table_data.append([
+                        e.get('codigo', ''),
                         e.get('empleado_nombre', 'N/A'),
                         e.get('insumo_nombre', 'N/A'),
                         str(e.get('cantidad', 0)),
                         e.get('insumo_unidad', ''),
                         f
                     ])
-                det_table = Table(det_table_data, colWidths=[2.2*inch, 2.2*inch, 0.8*inch, 0.8*inch, 1.0*inch])
+                det_table = Table(det_table_data, colWidths=[1.0*inch, 2.0*inch, 2.0*inch, 0.8*inch, 0.8*inch, 1.0*inch])
                 det_table.setStyle(TableStyle([
                     ('BACKGROUND', (0, 0), (-1, 0), self.colors.NARANJA),
                     ('TEXTCOLOR', (0, 0), (-1, 0), self.colors.BLANCO),
@@ -769,6 +780,9 @@ class ReportesService(LoggerMixin):
             
             elements = []
             styles = getSampleStyleSheet()
+            # Estandarizar tipografías en todo el documento
+            styles['Normal'].fontName = 'Helvetica'
+            styles['Heading2'].fontName = 'Helvetica-Bold'
             
             # Título
             title_style = ParagraphStyle(
@@ -795,6 +809,7 @@ class ReportesService(LoggerMixin):
                 'Summary',
                 parent=styles['Normal'],
                 fontSize=11,
+                fontName='Helvetica',
                 textColor=self.colors.GRIS
             )
             
@@ -917,6 +932,194 @@ class ReportesService(LoggerMixin):
             self.logger.error(f"Error generando reporte de alertas PDF: {e}")
             raise ReportGenerationException("alertas_pdf", str(e))
     
+    @service_exception_handler("ReportesService")
+    def generar_reporte_empleados_pdf(self) -> Dict[str, Any]:
+        """
+        Genera reporte de empleados en PDF con formato institucional.
+        Incluye: Cédula, Nombre Completo, Cargo, Estado, Fecha de creación.
+        """
+        self.logger.info("Generando reporte de empleados en PDF")
+
+        try:
+            # Obtener datos (incluir inactivos para ver estado)
+            empleados_result = micro_empleados.listar_empleados(active_only=False, include_stats=False)
+            empleados = empleados_result.get('empleados', [])
+
+            # Crear archivo
+            filename = self._get_report_filename("empleados_listado", "pdf")
+            filepath = self.output_dir / filename
+
+            # Documento
+            doc = SimpleDocTemplate(
+                str(filepath),
+                pagesize=A4,
+                rightMargin=72, leftMargin=72,
+                topMargin=100, bottomMargin=80
+            )
+
+            elements = []
+            styles = getSampleStyleSheet()
+            # Estandarizar tipografías en todo el documento
+            styles['Normal'].fontName = 'Helvetica'
+            styles['Heading2'].fontName = 'Helvetica-Bold'
+
+            title_style = ParagraphStyle(
+                'CustomTitle',
+                parent=styles['Heading1'],
+                fontName='Helvetica',
+                fontSize=18,
+                textColor=self.colors.AZUL_PRINCIPAL,
+                alignment=1
+            )
+            elements.append(Paragraph("Reporte de Empleados", title_style))
+            elements.append(Spacer(1, 20))
+
+            # Encabezado de tabla
+            headers = ['Cédula', 'Nombre Completo', 'Cargo', 'Estado', 'Fecha de Creación', 'Nota']
+            table_data = [headers]
+
+            # Filas
+            for emp in empleados:
+                estado = "Activo" if emp.get('activo', True) else "Inactivo"
+                fecha = emp.get('fecha_creacion')
+                try:
+                    if isinstance(fecha, str):
+                        fecha = datetime.fromisoformat(fecha.replace('Z', '+00:00'))
+                    fecha_txt = fecha.strftime('%d/%m/%Y %H:%M') if fecha else ''
+                except Exception:
+                    fecha_txt = emp.get('fecha_creacion', '')[:19].replace('T', ' ')
+                row = [
+                    emp.get('cedula', ''),
+                    emp.get('nombre_completo', ''),
+                    emp.get('cargo', ''),
+                    estado,
+                    fecha_txt,
+                    (emp.get('nota', '') or '')[:120]
+                ]
+                table_data.append(row)
+
+            # Tabla
+            col_widths = [1.2*inch, 2.3*inch, 1.3*inch, 0.9*inch, 1.2*inch, 2.0*inch]
+            table = Table(table_data, colWidths=col_widths)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), self.colors.AZUL_SECUNDARIO),
+                ('TEXTCOLOR', (0, 0), (-1, 0), self.colors.BLANCO),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('GRID', (0, 0), (-1, -1), 0.5, self.colors.GRIS),
+                ('ALIGN', (0, 1), (-1, -1), 'CENTER'),
+            ]))
+            elements.append(table)
+
+            # Generar
+            def add_page_elements(canvas, doc):
+                self._create_pdf_header(canvas, doc)
+                self._create_pdf_footer(canvas, doc)
+
+            doc.build(elements, onFirstPage=add_page_elements, onLaterPages=add_page_elements)
+
+            log_operation("REPORTE_EMPLEADOS_PDF_GENERADO", f"Archivo: {filename}")
+            self.logger.info(f"Reporte de empleados PDF generado: {filepath}")
+
+            return {
+                'success': True,
+                'filename': filename,
+                'filepath': str(filepath),
+                'size_mb': round(filepath.stat().st_size / (1024*1024), 2),
+                'total_empleados': len(empleados),
+                'message': 'Reporte de empleados generado exitosamente en PDF'
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error generando reporte de empleados PDF: {e}")
+            raise ReportGenerationException("empleados_pdf", str(e))
+
+    @service_exception_handler("ReportesService")
+    def generar_reporte_empleados_excel(self) -> Dict[str, Any]:
+        """
+        Genera reporte de empleados en Excel con encabezados en español.
+        Incluye: Cédula, Nombre Completo, Cargo, Estado, Fecha de creación.
+        """
+        self.logger.info("Generando reporte de empleados en Excel")
+
+        try:
+            empleados_result = micro_empleados.listar_empleados(active_only=False, include_stats=False)
+            empleados = empleados_result.get('empleados', [])
+
+            filename = self._get_report_filename("empleados_listado", "xlsx")
+            filepath = self.output_dir / filename
+
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            ws.title = "Empleados"
+
+            # Título
+            ws['A1'] = "Reporte de Empleados - DelegInsumos"
+            ws['A1'].font = Font(name='Calibri', size=16, bold=True, color='1976D2')
+            ws.merge_cells('A1:F1')
+
+            ws['A2'] = f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            ws['A2'].font = Font(name='Calibri', size=10, color='757575')
+
+            # Encabezados
+            headers = ['Cédula', 'Nombre Completo', 'Cargo', 'Estado', 'Fecha de Creación', 'Nota']
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=4, column=col, value=header)
+                cell.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+                cell.fill = PatternFill(start_color='2196F3', end_color='2196F3', fill_type='solid')
+                cell.alignment = Alignment(horizontal='center')
+
+            # Filas
+            r = 5
+            for emp in empleados:
+                estado = "Activo" if emp.get('activo', True) else "Inactivo"
+                fecha = emp.get('fecha_creacion')
+                try:
+                    if isinstance(fecha, str):
+                        fecha = datetime.fromisoformat(fecha.replace('Z', '+00:00'))
+                    fecha_txt = fecha.strftime('%d/%m/%Y %H:%M') if fecha else ''
+                except Exception:
+                    fecha_txt = emp.get('fecha_creacion', '')[:19].replace('T', ' ')
+                ws.cell(row=r, column=1, value=emp.get('cedula', ''))
+                ws.cell(row=r, column=2, value=emp.get('nombre_completo', ''))
+                ws.cell(row=r, column=3, value=emp.get('cargo', ''))
+                ws.cell(row=r, column=4, value=estado)
+                ws.cell(row=r, column=5, value=fecha_txt)
+                ws.cell(row=r, column=6, value=(emp.get('nota', '') or ''))
+                r += 1
+
+            # Auto ajustar (evitar MergedCell: usar índices y get_column_letter)
+            max_col = ws.max_column
+            max_row = ws.max_row
+            for col_idx in range(1, max_col + 1):
+                max_length = 0
+                col_letter = get_column_letter(col_idx)
+                for row_idx in range(1, max_row + 1):
+                    cell = ws.cell(row=row_idx, column=col_idx)
+                    if cell.value is not None:
+                        max_length = max(max_length, len(str(cell.value)))
+                ws.column_dimensions[col_letter].width = min(max_length + 2, 40)
+
+            wb.save(str(filepath))
+
+            log_operation("REPORTE_EMPLEADOS_EXCEL_GENERADO", f"Archivo: {filename}")
+            self.logger.info(f"Reporte de empleados Excel generado: {filepath}")
+
+            return {
+                'success': True,
+                'filename': filename,
+                'filepath': str(filepath),
+                'size_mb': round(filepath.stat().st_size / (1024*1024), 2),
+                'total_empleados': len(empleados),
+                'sheet': 'Empleados',
+                'message': 'Reporte de empleados generado exitosamente en Excel'
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error generando reporte de empleados Excel: {e}")
+            raise ReportGenerationException("empleados_excel", str(e))
+
     @service_exception_handler("ReportesService")
     def listar_reportes_disponibles(self) -> List[Dict[str, Any]]:
         """
@@ -1131,7 +1334,7 @@ def generar_reporte_inventario_excel() -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de inventario Excel"""
     return reportes_service.generar_reporte_inventario_excel()
 
-def generar_reporte_entregas_pdf(fecha_inicio: Optional[date] = None, 
+def generar_reporte_entregas_pdf(fecha_inicio: Optional[date] = None,
                                fecha_fin: Optional[date] = None) -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de entregas PDF"""
     return reportes_service.generar_reporte_entregas_pdf(fecha_inicio, fecha_fin)
@@ -1139,6 +1342,14 @@ def generar_reporte_entregas_pdf(fecha_inicio: Optional[date] = None,
 def generar_reporte_alertas_pdf() -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de alertas PDF"""
     return reportes_service.generar_reporte_alertas_pdf()
+
+def generar_reporte_empleados_pdf() -> Dict[str, Any]:
+    """Función de conveniencia para generar reporte de empleados PDF"""
+    return reportes_service.generar_reporte_empleados_pdf()
+
+def generar_reporte_empleados_excel() -> Dict[str, Any]:
+    """Función de conveniencia para generar reporte de empleados Excel"""
+    return reportes_service.generar_reporte_empleados_excel()
 
 def listar_reportes_disponibles() -> List[Dict[str, Any]]:
     """Función de conveniencia para listar reportes disponibles"""

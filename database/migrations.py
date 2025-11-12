@@ -477,6 +477,87 @@ class ViewsPatchMigration(Migration):
         self.logger.info("Vista vw_entregas_completas revertida a definición previa")
 
 
+class EmployeesNotesAndCodigoMigration(Migration):
+    """Migración para agregar campo 'nota' a empleados y exponer 'codigo' de entrega en la vista"""
+    def __init__(self):
+        super().__init__("007", "Agregar 'nota' a empleados y 'codigo' en vw_entregas_completas")
+
+    def up(self) -> None:
+        try:
+            with db_connection.transaction() as cursor:
+                # Agregar columna 'nota' a empleados (ignorar si ya existe)
+                try:
+                    cursor.execute("ALTER TABLE empleados ADD COLUMN nota TEXT")
+                except Exception as e:
+                    if "duplicate column name" not in str(e).lower():
+                        raise
+
+                # Actualizar vista vw_entregas_completas para incluir 'codigo' de entrega
+                cursor.execute("DROP VIEW IF EXISTS vw_entregas_completas")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_entregas_completas AS
+                SELECT
+                    e.id,
+                    e.codigo as codigo,
+                    e.empleado_id,
+                    e.insumo_id,
+                    e.cantidad,
+                    e.fecha_entrega,
+                    e.observaciones,
+                    e.entregado_por,
+                    emp.nombre_completo as empleado_nombre,
+                    emp.cargo as empleado_cargo,
+                    emp.departamento as empleado_departamento,
+                    emp.cedula as empleado_cedula,
+                    i.nombre as insumo_nombre,
+                    i.categoria as insumo_categoria,
+                    i.unidad_medida as insumo_unidad,
+                    i.precio_unitario as insumo_precio,
+                    (e.cantidad * i.precio_unitario) as valor_total
+                FROM entregas e
+                INNER JOIN empleados emp ON e.empleado_id = emp.id
+                INNER JOIN insumos i ON e.insumo_id = i.id
+                ORDER BY e.fecha_entrega DESC
+                """)
+            self.logger.info("Columna 'nota' agregada y vista actualizada con 'codigo' de entrega")
+        except Exception as e:
+            self.logger.error(f"Error en EmployeesNotesAndCodigoMigration.up: {e}")
+            raise DatabaseMigrationException(f"Error en migración 007: {e}")
+
+    def down(self) -> None:
+        try:
+            with db_connection.transaction() as cursor:
+                # Revertir la vista (sin 'codigo')
+                cursor.execute("DROP VIEW IF EXISTS vw_entregas_completas")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_entregas_completas AS
+                SELECT
+                    e.id,
+                    e.empleado_id,
+                    e.insumo_id,
+                    e.cantidad,
+                    e.fecha_entrega,
+                    e.observaciones,
+                    e.entregado_por,
+                    emp.nombre_completo as empleado_nombre,
+                    emp.cargo as empleado_cargo,
+                    emp.departamento as empleado_departamento,
+                    emp.cedula as empleado_cedula,
+                    i.nombre as insumo_nombre,
+                    i.categoria as insumo_categoria,
+                    i.unidad_medida as insumo_unidad,
+                    i.precio_unitario as insumo_precio,
+                    (e.cantidad * i.precio_unitario) as valor_total
+                FROM entregas e
+                INNER JOIN empleados emp ON e.empleado_id = emp.id
+                INNER JOIN insumos i ON e.insumo_id = i.id
+                ORDER BY e.fecha_entrega DESC
+                """)
+            self.logger.info("Vista vw_entregas_completas revertida sin 'codigo'")
+        except Exception as e:
+            self.logger.error(f"Error en EmployeesNotesAndCodigoMigration.down: {e}")
+            raise DatabaseMigrationException(f"Error revirtiendo migración 007: {e}")
+
 class MigrationManager(LoggerMixin):
     """
     Gestor de migraciones de base de datos
@@ -490,7 +571,8 @@ class MigrationManager(LoggerMixin):
             TriggerMigration(),
             ViewsMigration(),
             UniqueIdsMigration(),
-            ViewsPatchMigration()
+            ViewsPatchMigration(),
+            EmployeesNotesAndCodigoMigration()
         ]
         
         # Crear tabla de control de migraciones

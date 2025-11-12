@@ -69,6 +69,9 @@ class EmpleadosTab(LoggerMixin):
         self.form_cedula = tk.StringVar()
         self.form_email = tk.StringVar()
         self.form_telefono = tk.StringVar()
+        # Nuevos campos
+        self.form_activo = tk.BooleanVar(value=True)
+        self.form_nota = tk.StringVar()
         # fecha_ingreso eliminada
         
         # Variables de filtros
@@ -93,7 +96,7 @@ class EmpleadosTab(LoggerMixin):
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
-            command=self.refresh_data,
+            command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
         
@@ -196,7 +199,7 @@ class EmpleadosTab(LoggerMixin):
         tree_frame = ttk.Frame(list_frame)
         tree_frame.pack(fill=BOTH, expand=True)
         
-        columns = ["Código", "Cédula", "Cargo", "Departamento", "Email", "Télefono"]
+        columns = ["Código", "Cédula", "Cargo", "Departamento", "Email", "Teléfono"]
         self.empleados_tree = ttk.Treeview(
             tree_frame,
             columns=columns,
@@ -214,7 +217,7 @@ class EmpleadosTab(LoggerMixin):
             ("Cargo", 120, True),
             ("Departamento", 120, True),
             ("Email", 150, True),
-            ("Télefono", 100, False)
+            ("Teléfono", 100, False)
         ]
         
         for col, (title, width, stretch) in zip(columns, column_configs):
@@ -376,6 +379,27 @@ class EmpleadosTab(LoggerMixin):
         )
         self.form_telefono_entry.grid(row=6, column=1, sticky="ew", padx=(5, 0), pady=2)
         
+        # Estado (Activo/Inactivo)
+        ttk.Label(fields_frame, text="Estado:").grid(row=7, column=0, sticky="w", pady=2)
+        self.form_activo_chk = ttk.Checkbutton(
+            fields_frame,
+            text="Activo",
+            variable=self.form_activo,
+            bootstyle="success-round-toggle"
+        )
+        self.form_activo_chk.grid(row=7, column=1, sticky="w", padx=(5, 0), pady=2)
+        
+        # Nota
+        ttk.Label(fields_frame, text="Nota:").grid(row=8, column=0, sticky="nw", pady=2)
+        self.form_nota_text = tk.Text(
+            fields_frame,
+            height=3,
+            wrap=tk.WORD,
+            font=("Helvetica", 9)
+        )
+        self.form_nota_text.grid(row=8, column=1, sticky="ew", padx=(5, 0), pady=2)
+        self.form_nota_text.bind("<KeyRelease>", self._update_nota_var)
+        
         # Fecha de ingreso (eliminada - no necesaria)
         
         # Configurar grid
@@ -387,7 +411,7 @@ class EmpleadosTab(LoggerMixin):
             text="ℹ️ Información Adicional",
             padding="10"
         )
-        self.info_frame.grid(row=7, column=0, columnspan=2, sticky="ew", pady=(15, 0))
+        self.info_frame.grid(row=9, column=0, columnspan=2, sticky="ew", pady=(15, 0))
         
         self.info_text = tk.Text(
             self.info_frame,
@@ -404,7 +428,7 @@ class EmpleadosTab(LoggerMixin):
             text="* Campos obligatorios",
             font=("Helvetica", 8),
             bootstyle="danger"
-        ).grid(row=8, column=0, columnspan=2, sticky="w", pady=(10, 0))
+        ).grid(row=10, column=0, columnspan=2, sticky="w", pady=(10, 0))
     
     def _create_employee_form_actions(self, parent):
         """Crea los botones de acción del formulario"""
@@ -458,10 +482,14 @@ class EmpleadosTab(LoggerMixin):
         self.view_deliveries_btn.pack_forget()
         self.delete_btn.pack_forget()
     
-    def refresh_data(self):
-        """Actualiza la lista de empleados"""
+    def refresh_data(self, quick: bool = False):
+        """Actualiza la lista de empleados.
+        
+        Args:
+            quick: Si True, realiza una recarga rápida (sin reconstruir elementos de UI innecesarios).
+        """
         try:
-            self.logger.debug("Actualizando datos de empleados")
+            self.logger.debug(f"Actualizando datos de empleados (quick={quick})")
             
             # Obtener lista de empleados con estadísticas
             result = micro_empleados.listar_empleados(active_only=True, include_stats=True)
@@ -474,9 +502,10 @@ class EmpleadosTab(LoggerMixin):
             self._update_statistics(result)
             
             if hasattr(self.app, 'update_status'):
-                self.app.update_status("Lista de empleados actualizada", "success")
+                msg = "Lista de empleados actualizada (rápida)" if quick else "Lista de empleados actualizada"
+                self.app.update_status(msg, "success")
             
-            self.logger.info(f"Lista de empleados actualizada: {len(self.empleados_list)} empleados")
+            self.logger.info(f"Lista de empleados actualizada: {len(self.empleados_list)} empleados (quick={quick})")
             
         except Exception as e:
             self.logger.error(f"Error actualizando datos de empleados: {e}")
@@ -532,14 +561,12 @@ class EmpleadosTab(LoggerMixin):
             # Resetear mapa de datos completos por item
             self._item_data = {}
             
-            # Agregar empleados
-            for empleado in empleados:
-                # Formatear datos para visualización (fecha_ingreso eliminada)
-                
-                # Determinar tag basado en estado
-                tag = "normal"
-                if not empleado.get('activo', True):
-                    tag = "inactive"
+            # Agregar empleados (con zebra y estado)
+            for idx, empleado in enumerate(empleados):
+                # Determinar tags: 'inactive' para inactivos; zebra para activos
+                estado_inactivo = not empleado.get('activo', True)
+                zebra_tag = "zebra_even" if idx % 2 == 0 else "zebra_odd"
+                tags_to_apply = ("inactive",) if estado_inactivo else (zebra_tag,)
                 
                 # Insertar en tree
                 item_id = self.empleados_tree.insert(
@@ -553,16 +580,16 @@ class EmpleadosTab(LoggerMixin):
                         empleado.get('email', ''),
                         empleado.get('telefono', '')
                     ),
-                    tags=(tag,)
+                    tags=tags_to_apply
                 )
                 
                 # Guardar datos completos en un mapa auxiliar
                 self._item_data[item_id] = empleado.copy()
             
-            # Configurar colores por tag
-            self.empleados_tree.tag_configure("inactive", background="#FFEBEE", foreground="#757575")  # Gris rojizo
-            self.empleados_tree.tag_configure("normal", background="#FFFFFF", foreground="#000000")    # Normal
-            
+            # Configurar colores por estado y zebra
+            self.empleados_tree.tag_configure("inactive", background="#F5F5F5", foreground="#616161")  # Inactivo (gris claro)
+            self.empleados_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000") # Activos (par)
+            self.empleados_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")  # Activos (impar)            
         except Exception as e:
             self.logger.error(f"Error actualizando visualización de empleados: {e}")
     
@@ -663,6 +690,17 @@ class EmpleadosTab(LoggerMixin):
             self.form_departamento.set(data.get("departamento", ""))
             self.form_email.set(data.get("email", ""))
             self.form_telefono.set(data.get("telefono", ""))
+            # Estado y nota
+            self.form_activo.set(bool(data.get("activo", True)))
+            nota_val = data.get("nota", "")
+            self.form_nota.set(nota_val)
+            # Sincronizar widget de nota
+            try:
+                self.form_nota_text.delete("1.0", tk.END)
+                if nota_val:
+                    self.form_nota_text.insert("1.0", nota_val)
+            except Exception:
+                pass
             
             # Actualizar información adicional
             self._update_employee_info_display(tree_item)
@@ -684,7 +722,7 @@ class EmpleadosTab(LoggerMixin):
                     "departamento": self.empleados_tree.set(tree_item, "Departamento"),
                     "cedula": self.empleados_tree.set(tree_item, "Cédula"),
                     "email": self.empleados_tree.set(tree_item, "Email"),
-                    "telefono": self.empleados_tree.set(tree_item, "Télefono"),
+                    "telefono": self.empleados_tree.set(tree_item, "Teléfono"),
                 }
             
             emp_obj = Empleado.from_dict(empleado_data)
@@ -709,6 +747,10 @@ class EmpleadosTab(LoggerMixin):
             else:
                 info_text += "📞 Sin información de contacto\n"
             
+            # Nota
+            nota_txt = (empleado_data.get('nota') or '').strip()
+            info_text += f"📝 Nota: {nota_txt if nota_txt else 'Sin nota'}\n"
+            
             # Actualizar display
             self.info_text.config(state="normal")
             self.info_text.delete("1.0", tk.END)
@@ -717,7 +759,15 @@ class EmpleadosTab(LoggerMixin):
             
         except Exception as e:
             self.logger.error(f"Error actualizando información del empleado: {e}")
-    
+        
+    def _update_nota_var(self, event=None):
+        """Actualiza la variable de nota desde el widget Text."""
+        try:
+            content = self.form_nota_text.get("1.0", tk.END).strip()
+            self.form_nota.set(content)
+        except Exception as e:
+            self.logger.debug(f"Error actualizando nota: {e}")
+        
     def show_add_form(self):
         """Muestra el formulario para agregar nuevo empleado"""
         log_user_action("SHOW_ADD_FORM", "new_empleado", "EmpleadosTab")
@@ -742,6 +792,13 @@ class EmpleadosTab(LoggerMixin):
         self.form_cedula.set("")
         self.form_email.set("")
         self.form_telefono.set("")
+        self.form_activo.set(True)
+        self.form_nota.set("")
+        # Limpiar widget Nota si existe
+        try:
+            self.form_nota_text.delete("1.0", tk.END)
+        except Exception:
+            pass
         # Fecha de ingreso eliminada
         
         self.selected_empleado = None
@@ -773,13 +830,17 @@ class EmpleadosTab(LoggerMixin):
         """Guarda el empleado (nuevo o editado)"""
         try:
             # Preparar datos del formulario
+            # Sincronizar nota desde el widget
+            self._update_nota_var()
             form_data = {
                 'nombre_completo': self.form_nombre_completo.get().strip(),
                 'cargo': self.form_cargo.get().strip(),
                 'departamento': self.form_departamento.get().strip(),
                 'cedula': self.form_cedula.get().strip(),
                 'email': self.form_email.get().strip(),
-                'telefono': self.form_telefono.get().strip()
+                'telefono': self.form_telefono.get().strip(),
+                'activo': bool(self.form_activo.get()),
+                'nota': self.form_nota.get().strip()
             }
             
             # Validar datos básicos
@@ -872,7 +933,7 @@ class EmpleadosTab(LoggerMixin):
             
             # Confirmar eliminación
             if ask_yes_no(
-                "Confirmer Eliminación",
+                "Confirmar Eliminación",
                 f"¿Está seguro que desea eliminar el empleado?\n\n{empleado_nombre}\n\n"
                 f"El empleado será marcado como inactivo pero se mantendrá en el historial.",
                 self.frame

@@ -23,7 +23,7 @@ from services.micro_alertas import micro_alertas
 from services.reportes_service import reportes_service
 from services.backup_service import backup_service
 from utils.logger import LoggerMixin, log_user_action
-from utils.helpers import format_currency, show_error_message, show_info_message
+from utils.helpers import show_error_message, show_info_message
 
 
 class DashboardTab(LoggerMixin):
@@ -69,7 +69,7 @@ class DashboardTab(LoggerMixin):
         refresh_btn = ttk.Button(
             welcome_frame,
             text="🔄 Actualizar",
-            command=self.refresh_data,
+            command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         )
         refresh_btn.pack(side=RIGHT)
@@ -239,16 +239,9 @@ class DashboardTab(LoggerMixin):
         
         ttk.Button(
             alerts_buttons,
-            text="🔍 Ver Todas",
+            text="🔍 Ver Todas las Alertas",
             command=self._show_all_alerts,
             bootstyle="outline-warning"
-        ).pack(side=LEFT, padx=(0, 5))
-        
-        ttk.Button(
-            alerts_buttons,
-            text="✅ Resolver Seleccionada",
-            command=self._resolve_selected_alert,
-            bootstyle="outline-success"
         ).pack(side=LEFT, padx=(0, 5))
         
         ttk.Button(
@@ -376,7 +369,7 @@ class DashboardTab(LoggerMixin):
         # Fila 2: Reportes y backup
         ttk.Button(
             actions_grid,
-            text="📄 Reporte Inventario",
+            text="📄 Reporte de Inventario",
             command=self._quick_inventory_report,
             bootstyle="warning",
             width=20
@@ -384,7 +377,7 @@ class DashboardTab(LoggerMixin):
         
         ttk.Button(
             actions_grid,
-            text="📊 Reporte Entregas",
+            text="📊 Reporte de Entregas",
             command=self._quick_deliveries_report,
             bootstyle="secondary",
             width=20
@@ -400,10 +393,14 @@ class DashboardTab(LoggerMixin):
         
         self.logger.debug("Sección de acciones rápidas creada")
     
-    def refresh_data(self):
-        """Actualiza todos los datos del dashboard"""
+    def refresh_data(self, quick: bool = False):
+        """Actualiza todos los datos del dashboard
+
+        Args:
+            quick: si True, realiza una actualización rápida de datos (sin reconstrucción de UI)
+        """
         try:
-            self.logger.debug("Refrescando datos del dashboard")
+            self.logger.debug(f"Refrescando datos del dashboard (quick={quick})")
             
             # Actualizar métricas principales
             self._update_main_metrics()
@@ -479,20 +476,27 @@ class DashboardTab(LoggerMixin):
                 self.alerts_low_var.set(f"Bajas: {sev_summary.get('BAJO', 0)}")
             
             # Agregar alertas al tree (máximo 10 más recientes)
-            for alert in alertas_activas[:10]:
+            for idx, alert in enumerate(alertas_activas[:10]):
                 # Preparar datos
                 tipo = alert['alert_type'].replace('_', ' ').title()
                 titulo = alert['title'][:40] + "..." if len(alert['title']) > 40 else alert['title']
                 mensaje = alert['message'][:60] + "..." if len(alert['message']) > 60 else alert['message']
-                fecha = datetime.fromisoformat(alert['created_at'].replace('Z', '+00:00')).strftime('%d/%m %H:%M')
-                
-                # Agregar al tree
-                item_id = self.alerts_tree.insert("", "end", text=alert['icon'], values=(tipo, titulo, mensaje, fecha))
-                # Aplicar resaltado por severidad
                 try:
-                    self.alerts_tree.item(item_id, tags=(alert.get('severity', 'BAJO'),))
+                    fecha = datetime.fromisoformat(alert['created_at'].replace('Z', '+00:00')).strftime('%d/%m %H:%M')
                 except Exception:
-                    pass
+                    fecha = alert.get('created_at', '')[:16].replace('T', ' ')
+                
+                # Tags: severidad + zebra
+                severity_tag = alert.get('severity', 'BAJO')
+                zebra_tag = "zebra_even" if idx % 2 == 0 else "zebra_odd"
+                
+                # Insertar con ambas etiquetas
+                item_id = self.alerts_tree.insert(
+                    "", "end",
+                    text=alert['icon'],
+                    values=(tipo, titulo, mensaje, fecha),
+                    tags=(severity_tag, zebra_tag)
+                )
                 
                 # Configurar texto del tipo con emoji según severidad
                 if alert['severity'] == 'CRÍTICO':
@@ -504,8 +508,15 @@ class DashboardTab(LoggerMixin):
                 else:
                     self.alerts_tree.set(item_id, "Tipo", f"🟢 {tipo}")
                 
-                # Guardar ID de alerta en el item para poder resolverla
-                self.alerts_tree.set(item_id, "#1", alert['id'])  # ID oculto en columna
+                # Guardar ID de alerta en columna oculta
+                self.alerts_tree.set(item_id, "#1", alert['id'])
+            
+            # Estilos zebra para alertas
+            try:
+                self.alerts_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000")
+                self.alerts_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")
+            except Exception:
+                pass  # ID oculto en columna
             
             if not alertas_activas:
                 # Agregar mensaje de "sin alertas"
@@ -536,15 +547,24 @@ class DashboardTab(LoggerMixin):
             # Obtener resumen por categorías
             categorias = micro_insumos.obtener_resumen_por_categoria()
             
-            for categoria in categorias:
+            # Insertar filas con zebra pattern
+            for idx, categoria in enumerate(categorias):
+                zebra_tag = "zebra_even" if idx % 2 == 0 else "zebra_odd"
                 self.categories_tree.insert(
                     "", "end",
                     text=categoria['categoria'],
                     values=(
                         categoria['total_insumos'],
                         categoria['cantidad_total']
-                    )
+                    ),
+                    tags=(zebra_tag,)
                 )
+            # Estilos zebra
+            try:
+                self.categories_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000")
+                self.categories_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")
+            except Exception:
+                pass
                 
         except Exception as e:
             self.logger.error(f"Error actualizando categorías: {e}")
@@ -559,17 +579,26 @@ class DashboardTab(LoggerMixin):
             # Obtener entregas recientes
             entregas_recientes = micro_entregas.obtener_entregas_recientes(dias=7, limit=10)
             
-            for entrega in entregas_recientes.get('entregas', []):
+            # Insertar filas con zebra pattern
+            for idx, entrega in enumerate(entregas_recientes.get('entregas', [])):
                 empleado = entrega['empleado_nombre'].split()[0] if entrega['empleado_nombre'] else "N/A"  # Solo primer nombre
                 insumo = entrega['insumo_nombre'][:20] + "..." if len(entrega['insumo_nombre']) > 20 else entrega['insumo_nombre']
                 cantidad = f"{entrega['cantidad']} {entrega['insumo_unidad']}"
                 fecha = datetime.fromisoformat(entrega['fecha_entrega'].replace('Z', '+00:00')).strftime('%d/%m')
+                zebra_tag = "zebra_even" if idx % 2 == 0 else "zebra_odd"
                 
                 self.recent_deliveries_tree.insert(
                     "", "end",
                     text="",
-                    values=(empleado, insumo, cantidad, fecha)
+                    values=(empleado, insumo, cantidad, fecha),
+                    tags=(zebra_tag,)
                 )
+            # Estilos zebra
+            try:
+                self.recent_deliveries_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000")
+                self.recent_deliveries_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")
+            except Exception:
+                pass
                 
         except Exception as e:
             self.logger.error(f"Error actualizando entregas recientes: {e}")
@@ -678,91 +707,98 @@ class DashboardTab(LoggerMixin):
             show_error_message("Error", f"Error creando backup: {str(e)}", self.frame)
     
     def _show_all_alerts(self):
-        """Muestra todas las alertas en una ventana"""
+        """Muestra todas las alertas en una ventana (vista tabular y coloreada por severidad)"""
         log_user_action("CLICK", "show_all_alerts", "Dashboard")
-        
         try:
             alertas_activas = micro_alertas.obtener_alertas_activas()
-            
+
             if not alertas_activas:
-                show_info_message(
-                    "Sin Alertas",
-                    "No hay alertas activas en el sistema",
-                    self.frame
-                )
+                show_info_message("Sin Alertas", "No hay alertas activas en el sistema", self.frame)
                 return
-            
-            # Crear ventana de alertas
-            alerts_window = ttk.Toplevel(self.app.root)
-            alerts_window.title("Todas las Alertas - DelegInsumos")
-            alerts_window.geometry("800x600")
-            
-            # Contenido de la ventana
-            alerts_content = ttk.Frame(alerts_window, padding="10")
-            alerts_content.pack(fill=BOTH, expand=True)
-            
-            # Lista detallada de alertas
-            alerts_text = ScrolledText(
-                alerts_content,
-                height=25,
-                wrap=tk.WORD
-            )
-            alerts_text.pack(fill=BOTH, expand=True)
-            
-            # Agregar contenido
-            content = f"ALERTAS ACTIVAS DEL SISTEMA\n{'='*50}\n\n"
-            
-            for i, alert in enumerate(alertas_activas, 1):
-                fecha = datetime.fromisoformat(alert['created_at'].replace('Z', '+00:00'))
-                content += f"{i}. {alert['icon']} {alert['title']}\n"
-                content += f"   Tipo: {alert['alert_type']}\n" 
-                content += f"   Severidad: {alert['severity']}\n"
-                content += f"   Fecha: {fecha.strftime('%d/%m/%Y %H:%M:%S')}\n"
-                content += f"   Mensaje: {alert['message']}\n"
-                content += f"   Acción requerida: {'Sí' if alert['action_required'] else 'No'}\n"
-                content += "-" * 50 + "\n\n"
-            
-            alerts_text.insert("1.0", content)
-            alerts_text.config(state="disabled")
-            
+
+            # Ventana
+            win = ttk.Toplevel(self.app.root)
+            win.title("Todas las Alertas - DelegInsumos")
+            win.geometry("900x500")
+
+            container = ttk.Frame(win, padding="10")
+            container.pack(fill=BOTH, expand=True)
+
+            # Treeview
+            columns = ["Severidad", "Tipo", "Título", "Mensaje", "Fecha", "Acción"]
+            tree = ttk.Treeview(container, columns=columns, show="headings", bootstyle="warning")
+            for col in columns:
+                tree.heading(col, text=col, anchor="center")
+            tree.column("Severidad", width=100, stretch=False)
+            tree.column("Tipo", width=140, stretch=False)
+            tree.column("Título", width=220, stretch=True)
+            tree.column("Mensaje", width=280, stretch=True)
+            tree.column("Fecha", width=140, stretch=False)
+            tree.column("Acción", width=70, stretch=False)
+
+            # Estilos por severidad (fondos)
+            try:
+                tree.tag_configure('CRITICA', background='#ffebee', foreground='#b71c1c')  # rojo claro fuerte
+                tree.tag_configure('ALTA', background='#fdecea', foreground='#d84315')      # rojo claro
+                tree.tag_configure('MEDIA', background='#fffde7', foreground='#f57f17')     # amarillo claro
+                tree.tag_configure('BAJA', background='#e3f2fd', foreground='#0d47a1')      # azul claro
+            except Exception:
+                pass
+
+            # Scrollbars
+            ysb = ttk.Scrollbar(container, orient=VERTICAL, command=tree.yview)
+            xsb = ttk.Scrollbar(container, orient=HORIZONTAL, command=tree.xview)
+            tree.configure(yscrollcommand=ysb.set, xscrollcommand=xsb.set)
+
+            tree.grid(row=0, column=0, sticky="nsew")
+            ysb.grid(row=0, column=1, sticky="ns")
+            xsb.grid(row=1, column=0, sticky="ew")
+            container.rowconfigure(0, weight=1)
+            container.columnconfigure(0, weight=1)
+
+            # Mapeo severidad -> etiqueta/tag
+            def sev_to_label_and_tag(sev: str):
+                m = {
+                    'CRITICAL': ("Crítica", "CRITICA"),
+                    'HIGH': ("Alta", "ALTA"),
+                    'MEDIUM': ("Media", "MEDIA"),
+                    'LOW': ("Baja", "BAJA"),
+                }
+                return m.get(sev, ("Desconocida", "BAJA"))
+
+            # Insertar filas
+            for a in alertas_activas:
+                # Etiqueta en español si viene desde servicio; si no, traducir
+                label = a.get('severity_label')
+                if not label:
+                    label, tag = sev_to_label_and_tag(a.get('severity', 'LOW'))
+                else:
+                    # Normalizar tag desde etiqueta en español
+                    norm = {'Crítica': 'CRITICA', 'Alta': 'ALTA', 'Media': 'MEDIA', 'Baja': 'BAJA'}
+                    tag = norm.get(label, 'BAJA')
+
+                try:
+                    fecha = datetime.fromisoformat(a['created_at'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                except Exception:
+                    fecha = a.get('created_at', '')[:19].replace('T', ' ')
+
+                tipo_disp = a.get('alert_type', '').replace('_', ' ').title()
+                titulo = a.get('title', '')
+                if len(titulo) > 40:
+                    titulo = titulo[:37] + "..."
+                mensaje = a.get('message', '')
+                if len(mensaje) > 60:
+                    mensaje = mensaje[:57] + "..."
+                accion = "Sí" if a.get('action_required') else "No"
+
+                tree.insert("", "end",
+                            values=(label, tipo_disp, titulo, mensaje, fecha, accion),
+                            tags=(tag,))
+
         except Exception as e:
             self.logger.error(f"Error mostrando todas las alertas: {e}")
             show_error_message("Error", f"Error cargando alertas: {str(e)}", self.frame)
     
-    def _resolve_selected_alert(self):
-        """Resuelve la alerta seleccionada"""
-        selection = self.alerts_tree.selection()
-        
-        if not selection:
-            show_info_message(
-                "Sin Selección",
-                "Por favor seleccione una alerta para resolver",
-                self.frame
-            )
-            return
-            
-        try:
-            # Obtener ID de la alerta (stored en columna oculta)
-            selected_item = selection[0]
-            alert_id = self.alerts_tree.set(selected_item, "#1")  # ID oculto
-            
-            if not alert_id:
-                show_error_message("Error", "No se pudo obtener ID de la alerta", self.frame)
-                return
-            
-            # Resolver alerta
-            result = micro_alertas.resolver_alerta(alert_id, "Usuario Dashboard")
-            
-            if result['success']:
-                show_info_message("Alerta Resuelta", result['message'], self.frame)
-                self._update_alerts_display()  # Actualizar vista
-                self._update_main_metrics()    # Actualizar métricas
-            else:
-                show_error_message("Error", "No se pudo resolver la alerta", self.frame)
-            
-        except Exception as e:
-            self.logger.error(f"Error resolviendo alerta: {e}")
-            show_error_message("Error", f"Error resolviendo alerta: {str(e)}", self.frame)
     
     def _check_alerts(self):
         """Verifica nuevas alertas manualmente"""

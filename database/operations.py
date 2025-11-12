@@ -373,8 +373,8 @@ class EmpleadoRepository(BaseRepository):
             sql = """
             INSERT INTO empleados (
                 nombre_completo, cargo, departamento, cedula,
-                email, telefono, codigo
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                email, telefono, nota, codigo
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """
             
             params = (
@@ -384,6 +384,7 @@ class EmpleadoRepository(BaseRepository):
                 data['cedula'],
                 data.get('email', ''),
                 data.get('telefono', ''),
+                data.get('nota', ''),
                 codigo
             )
             
@@ -555,7 +556,7 @@ class EmpleadoRepository(BaseRepository):
             
             updateable_fields = [
                 'nombre_completo', 'cargo', 'departamento', 'cedula',
-                'email', 'telefono', 'activo'
+                'email', 'telefono', 'nota', 'activo'
             ]
             
             for field in updateable_fields:

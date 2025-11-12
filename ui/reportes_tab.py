@@ -163,7 +163,7 @@ class ReportesTab(LoggerMixin):
         del_frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
         
         # Rango de fechas
-        ttk.Label(del_frame, text="Fecha inicio:").pack(anchor="w")
+        ttk.Label(del_frame, text="Fecha de Inicio:").pack(anchor="w")
         self.start_date = DateEntry(
             del_frame,
             bootstyle="primary",
@@ -171,7 +171,7 @@ class ReportesTab(LoggerMixin):
         )
         self.start_date.pack(fill=X, pady=(2, 5))
         
-        ttk.Label(del_frame, text="Fecha fin:").pack(anchor="w")
+        ttk.Label(del_frame, text="Fecha de Fin:").pack(anchor="w")
         self.end_date = DateEntry(
             del_frame,
             bootstyle="primary",
@@ -182,7 +182,7 @@ class ReportesTab(LoggerMixin):
         # Botones
         ttk.Button(
             del_frame,
-            text="📄 Reporte Período",
+            text="📄 Reporte del Período",
             command=self._generate_deliveries_pdf,
             bootstyle="info",
             width=20
@@ -201,7 +201,7 @@ class ReportesTab(LoggerMixin):
         # Botones de reportes del sistema
         ttk.Button(
             sys_frame,
-            text="⚠️ Reporte Alertas",
+            text="⚠️ Reporte de Alertas",
             command=self._generate_alerts_pdf,
             bootstyle="warning",
             width=20
@@ -209,19 +209,12 @@ class ReportesTab(LoggerMixin):
         
         ttk.Button(
             sys_frame,
-            text="👥 Reporte Empleados",
+            text="👥 Reporte de Empleados",
             command=self._generate_employees_pdf,
             bootstyle="secondary",
             width=20
         ).pack(fill=X, pady=2)
         
-        ttk.Button(
-            sys_frame,
-            text="📈 Dashboard Ejecutivo",
-            command=self._generate_executive_pdf,
-            bootstyle="dark",
-            width=20
-        ).pack(fill=X, pady=2)
     
     def _create_global_config_section(self, parent, row, col):
         """Crea sección de configuración global"""
@@ -249,7 +242,7 @@ class ReportesTab(LoggerMixin):
         # Botones de gestión
         ttk.Button(
             config_frame,
-            text="🧹 Limpiar Antiguos",
+            text="🧹 Limpiar Reportes Antiguos",
             command=self._cleanup_old_reports,
             bootstyle="danger-outline",
             width=20
@@ -416,11 +409,14 @@ class ReportesTab(LoggerMixin):
             # Resetear almacenamiento auxiliar
             self._item_data = {}
             
-            # Agregar reportes al tree
-            for reporte in self.reportes_list:
+            # Agregar reportes al tree (con zebra)
+            for idx, reporte in enumerate(self.reportes_list):
                 # Formatear fechas
                 fecha_creacion = datetime.fromisoformat(reporte['created_at']).strftime('%d/%m/%Y %H:%M')
                 fecha_modificacion = datetime.fromisoformat(reporte['modified_at']).strftime('%d/%m/%Y %H:%M')
+                
+                # Tag zebra
+                zebra_tag = "even" if idx % 2 == 0 else "odd"
                 
                 # Agregar item
                 item_id = self.reports_tree.insert(
@@ -432,11 +428,19 @@ class ReportesTab(LoggerMixin):
                         f"{reporte['size_mb']:.2f} MB",
                         fecha_creacion,
                         fecha_modificacion
-                    )
+                    ),
+                    tags=(zebra_tag,)
                 )
                 
                 # Guardar datos completos en un mapa auxiliar
                 self._item_data[item_id] = reporte
+            
+            # Estilos zebra
+            try:
+                self.reports_tree.tag_configure("even", background="#F7FAFF")
+                self.reports_tree.tag_configure("odd", background="#EDF3FF")
+            except Exception:
+                pass
             
             # Actualizar conteo
             total_reportes = len(self.reportes_list)
@@ -679,14 +683,60 @@ class ReportesTab(LoggerMixin):
             show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
     
     def _generate_employees_pdf(self):
-        """Genera reporte de empleados (placeholder)"""
-        log_user_action("CLICK", "generate_employees_pdf", "ReportesTab")
-        show_info_message("Función Futura", "Reporte de empleados será implementado en la próxima versión", self.frame)
+        """Genera reporte de empleados en PDF o Excel según formato seleccionado"""
+        log_user_action("CLICK", "generate_employees_report", "ReportesTab")
+        try:
+            fmt = (self.format_var.get() or "PDF").upper()
+            if hasattr(self.app, 'update_status'):
+                self.app.update_status(f"Generando reporte de empleados {fmt}...")
+            if fmt == "EXCEL":
+                result = reportes_service.generar_reporte_empleados_excel()
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de empleados Excel generado", "success")
+                    show_info_message(
+                        "Reporte de Empleados",
+                        f"Reporte generado:\n\n"
+                        f"📊 {result['filename']}\n"
+                        f"📁 Tamaño: {result['size_mb']} MB\n"
+                        f"👥 Empleados: {result.get('total_empleados', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message("Error", "No se pudo generar el reporte de empleados en Excel", self.frame)
+            else:
+                result = reportes_service.generar_reporte_empleados_pdf()
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de empleados PDF generado", "success")
+                    show_info_message(
+                        "Reporte de Empleados",
+                        f"Reporte generado:\n\n"
+                        f"📄 {result['filename']}\n"
+                        f"📁 Tamaño: {result['size_mb']} MB\n"
+                        f"👥 Empleados: {result.get('total_empleados', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message("Error", "No se pudo generar el reporte de empleados en PDF", self.frame)
+        except Exception as e:
+            self.logger.error(f"Error generando reporte de empleados: {e}")
+            if hasattr(self.app, 'update_status'):
+                self.app.update_status("Error generando reporte", "danger")
+            show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
     
-    def _generate_executive_pdf(self):
-        """Genera dashboard ejecutivo (placeholder)"""
-        log_user_action("CLICK", "generate_executive_pdf", "ReportesTab")
-        show_info_message("Función Futura", "Dashboard ejecutivo será implementado en la próxima versión", self.frame)
     
     def _open_selected_report(self):
         """Abre el reporte seleccionado"""

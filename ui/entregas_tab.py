@@ -21,7 +21,7 @@ from services.micro_insumos import micro_insumos
 from models.entrega import Entrega
 from utils.logger import LoggerMixin, log_user_action
 from utils.helpers import (
-    format_date, format_currency, show_error_message, show_info_message, 
+    format_date, show_error_message, show_info_message,
     ask_yes_no
 )
 from utils.validators import validate_entrega_data
@@ -97,7 +97,7 @@ class EntregasTab(LoggerMixin):
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
-            command=self.refresh_data,
+            command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
         
@@ -204,8 +204,8 @@ class EntregasTab(LoggerMixin):
         )
         
         # Configurar columnas
-        self.entregas_tree.heading("#0", text="ID", anchor="center")
-        self.entregas_tree.column("#0", width=50, stretch=False)
+        self.entregas_tree.heading("#0", text="Código", anchor="center")
+        self.entregas_tree.column("#0", width=120, stretch=False)
         
         column_configs = [
             ("Fecha", 120, False),
@@ -328,10 +328,10 @@ class EntregasTab(LoggerMixin):
         self.form_empleado_combo.pack(side=LEFT, fill=X, expand=True)
         self.form_empleado_combo.bind("<<ComboboxSelected>>", self._on_empleado_selected)
         
-        # Botón buscar empleado por cédula
+        # Botón buscar empleado por código o nombre
         ttk.Button(
             empleado_frame,
-            text="🔍",
+            text="🔎",
             command=self._search_empleado_by_cedula,
             bootstyle="outline-primary",
             width=3
@@ -361,6 +361,14 @@ class EntregasTab(LoggerMixin):
             bootstyle="info"
         )
         self.stock_info_label.pack(side=RIGHT, padx=(5, 0))
+        # Botón buscar insumo por código o nombre
+        ttk.Button(
+            insumo_frame,
+            text="🔎",
+            command=self._search_insumo_by_codigo_o_nombre,
+            bootstyle="outline-primary",
+            width=3
+        ).pack(side=RIGHT, padx=(5, 0))
         
         # Cantidad a entregar
         ttk.Label(fields_frame, text="* Cantidad:").grid(row=2, column=0, sticky="w", pady=2)
@@ -484,18 +492,23 @@ class EntregasTab(LoggerMixin):
         )
         self.validation_status_label.pack(side=RIGHT)
     
-    def refresh_data(self):
-        """Actualiza la lista de entregas y datos relacionados"""
+    def refresh_data(self, quick: bool = False):
+        """Actualiza la lista de entregas y datos relacionados.
+        
+        Args:
+            quick: Si True, recarga solo la lista de entregas y estadísticas (sin recargar combos).
+        """
         try:
-            self.logger.debug("Actualizando datos de entregas")
+            self.logger.debug(f"Actualizando datos de entregas (quick={quick})")
             
             # Obtener entregas con límite para rendimiento
             result = micro_entregas.listar_entregas(limit=200, include_stats=True)
             self.entregas_list = result.get('entregas', [])
             
-            # Cargar empleados y insumos disponibles
-            self._load_available_employees()
-            self._load_available_insumos()
+            # Cargar empleados e insumos solo cuando no es actualización rápida
+            if not quick:
+                self._load_available_employees()
+                self._load_available_insumos()
             
             # Aplicar filtros actuales
             self._apply_filters()
@@ -504,9 +517,10 @@ class EntregasTab(LoggerMixin):
             self._update_statistics(result)
             
             if hasattr(self.app, 'update_status'):
-                self.app.update_status("Lista de entregas actualizada", "success")
+                msg = "Lista de entregas actualizada (rápida)" if quick else "Lista de entregas actualizada"
+                self.app.update_status(msg, "success")
             
-            self.logger.info(f"Lista de entregas actualizada: {len(self.entregas_list)} entregas")
+            self.logger.info(f"Lista de entregas actualizada: {len(self.entregas_list)} entregas (quick={quick})")
             
         except Exception as e:
             self.logger.error(f"Error actualizando datos de entregas: {e}")
@@ -542,7 +556,7 @@ class EntregasTab(LoggerMixin):
             
             # Actualizar combo de insumos en formulario
             insumo_values = ["Seleccione insumo..."] + [
-                f"{insumo['nombre']} ({insumo['categoria']}) - Stock: {insumo['cantidad_actual']} {insumo['unidad_medida']}"
+                f"{insumo['nombre']} ({insumo['categoria']})"
                 for insumo in self.insumos_disponibles
             ]
             self.form_insumo_combo['values'] = insumo_values
@@ -620,8 +634,8 @@ class EntregasTab(LoggerMixin):
             # Resetear mapa de datos completos por item
             self._item_data = {}
             
-            # Agregar entregas
-            for entrega in entregas:
+            # Agregar entregas (con zebra por estado reciente/antiguo)
+            for idx, entrega in enumerate(entregas):
                 # Formatear datos
                 fecha = datetime.fromisoformat(entrega['fecha_entrega'].replace('Z', '+00:00'))
                 fecha_display = fecha.strftime('%d/%m/%Y %H:%M')
@@ -637,13 +651,15 @@ class EntregasTab(LoggerMixin):
                 cantidad_display = f"{entrega['cantidad']} {entrega.get('insumo_unidad', '')}"
                 entregado_por = entrega.get('entregado_por', 'Sistema')[:15]
                 
-                # Determinar tag basado en fecha (reciente vs antigua)
-                tag = "recent" if fecha >= datetime.now() - timedelta(days=7) else "old"
+                # Determinar tag basado en fecha (reciente vs antigua) y zebra
+                tag_base = "recent" if fecha >= datetime.now() - timedelta(days=7) else "old"
+                zebra_tag = "even" if idx % 2 == 0 else "odd"
+                row_tag = f"{tag_base}_{zebra_tag}"
                 
                 # Insertar en tree
                 item_id = self.entregas_tree.insert(
                     "", "end",
-                    text=str(entrega.get('id', '')),
+                    text=str(entrega.get('codigo', '')),
                     values=(
                         fecha_display,
                         empleado_display,
@@ -651,15 +667,20 @@ class EntregasTab(LoggerMixin):
                         cantidad_display,
                         entregado_por
                     ),
-                    tags=(tag,)
+                    tags=(row_tag,)
                 )
                 
                 # Guardar datos completos en un mapa auxiliar
                 self._item_data[item_id] = entrega.copy()
             
-            # Configurar colores
-            self.entregas_tree.tag_configure("recent", background="#E8F5E8", foreground="#2E7D32")  # Verde claro
-            self.entregas_tree.tag_configure("old", background="#F5F5F5", foreground="#616161")     # Gris claro
+            # Configurar colores zebra por estado
+            try:
+                self.entregas_tree.tag_configure("recent_even", background="#E8F5E8", foreground="#2E7D32")  # Verde claro (par)
+                self.entregas_tree.tag_configure("recent_odd", background="#F1FAF1", foreground="#2E7D32")   # Verde más claro (impar)
+                self.entregas_tree.tag_configure("old_even", background="#F5F5F5", foreground="#616161")      # Gris claro (par)
+                self.entregas_tree.tag_configure("old_odd", background="#EEEEEE", foreground="#616161")       # Gris más claro (impar)
+            except Exception:
+                pass
             
         except Exception as e:
             self.logger.error(f"Error actualizando visualización de entregas: {e}")
@@ -1003,50 +1024,147 @@ El sistema validara automaticamente que:
         self._clear_form()
     
     def _search_empleado_by_cedula(self):
-        """Busca empleado por número de cédula"""
-        log_user_action("CLICK", "search_empleado_cedula", "EntregasTab")
-        
-        # Crear diálogo simple para introducir cédula
-        cedula = tk.simpledialog.askstring(
+        """
+        Buscar empleado por Código EMP-XXXX, cédula o nombre.
+        (Se mantiene el nombre del método por compatibilidad con el botón existente)
+        """
+        log_user_action("CLICK", "search_empleado_codigo_nombre", "EntregasTab")
+        term = tk.simpledialog.askstring(
             "Buscar Empleado",
-            "Ingrese el número de cédula del empleado:",
+            "Ingrese Código EMP-XXXX, Cédula o Nombre del empleado:",
             parent=self.frame
         )
-        
-        if cedula:
-            try:
-                empleado = micro_empleados.obtener_empleado_por_cedula(cedula.strip())
-                
-                if empleado:
-                    if empleado['can_receive_supplies']:
-                        # Seleccionar en combo
-                        display_name = f"{empleado['nombre_completo']} ({empleado['cedula']})"
-                        self.form_empleado_display.set(display_name)
-                        self.form_empleado_id.set(empleado['id'])
-                        
-                        show_info_message(
-                            "Empleado Encontrado",
-                            f"Empleado: {empleado['nombre_completo']}\n"
-                            f"Cargo: {empleado.get('cargo', 'N/A')}\n"
-                            f"Departamento: {empleado.get('departamento', 'N/A')}",
-                            self.frame
-                        )
-                    else:
-                        show_error_message(
-                            "Empleado No Válido",
-                            f"El empleado {empleado['nombre_completo']} no puede recibir insumos (está inactivo)",
-                            self.frame
-                        )
+        if not term:
+            return
+
+        try:
+            term_norm = term.strip()
+            empleados_data = micro_empleados.listar_empleados(active_only=True, include_stats=False)
+            candidatos = empleados_data.get('empleados', [])
+
+            matches: List[Dict[str, Any]] = []
+            term_upper = term_norm.upper()
+            term_lower = term_norm.lower()
+
+            for emp in candidatos:
+                codigo = (emp.get('codigo') or '').upper()
+                cedula = (emp.get('cedula') or '').strip()
+                nombre = (emp.get('nombre_completo') or '')
+                if term_upper.startswith("EMP-"):
+                    if codigo == term_upper:
+                        matches.append(emp)
+                elif term_norm.isdigit():
+                    if cedula == term_norm:
+                        matches.append(emp)
                 else:
-                    show_error_message(
-                        "Empleado No Encontrado",
-                        f"No se encontró ningún empleado con cédula: {cedula}",
-                        self.frame
-                    )
-                    
-            except Exception as e:
-                self.logger.error(f"Error buscando empleado por cédula: {e}")
-                show_error_message("Error", f"Error buscando empleado: {str(e)}", self.frame)
+                    if term_lower in nombre.lower():
+                        matches.append(emp)
+
+            if not matches:
+                show_error_message(
+                    "Empleado No Encontrado",
+                    f"No se encontraron coincidencias para: {term_norm}",
+                    self.frame
+                )
+                return
+
+            emp = matches[0]
+            if not emp.get('activo', True):
+                show_error_message(
+                    "Empleado Inactivo",
+                    f"El empleado {emp.get('nombre_completo','N/A')} está inactivo y no puede recibir insumos.",
+                    self.frame
+                )
+                return
+
+            # Seleccionar en UI
+            display_name = f"{emp.get('nombre_completo','')} ({emp.get('cedula','')})"
+            self.form_empleado_display.set(display_name)
+            self.form_empleado_id.set(emp.get('id', 0))
+
+            # Feedback
+            extra = f"\nCoincidencias: {len(matches)}" if len(matches) > 1 else ""
+            show_info_message(
+                "Empleado Seleccionado",
+                f"Empleado: {emp.get('nombre_completo','')}\n"
+                f"Cargo: {emp.get('cargo','N/A')}\n"
+                f"Departamento: {emp.get('departamento','N/A')}{extra}",
+                self.frame
+            )
+
+            # Validar formulario tras selección
+            self._validate_form_data()
+
+        except Exception as e:
+            self.logger.error(f"Error buscando empleado: {e}")
+            show_error_message("Error", f"Error buscando empleado: {str(e)}", self.frame)
+
+    def _search_insumo_by_codigo_o_nombre(self):
+        """Busca insumo por Código INS-XXXX o por nombre y lo selecciona en el formulario."""
+        log_user_action("CLICK", "search_insumo_codigo_nombre", "EntregasTab")
+        term = tk.simpledialog.askstring(
+            "Buscar Insumo",
+            "Ingrese Código INS-XXXX o Nombre del insumo:",
+            parent=self.frame
+        )
+        if not term:
+            return
+
+        try:
+            term_norm = term.strip()
+            insumos_data = micro_insumos.listar_insumos(active_only=True)
+            insumos = insumos_data.get('insumos', [])
+
+            matches: List[Dict[str, Any]] = []
+            term_upper = term_norm.upper()
+            term_lower = term_norm.lower()
+
+            for ins in insumos:
+                codigo = (ins.get('codigo') or '').upper()
+                nombre = (ins.get('nombre') or '')
+                if term_upper.startswith("INS-"):
+                    if codigo == term_upper:
+                        matches.append(ins)
+                else:
+                    if term_lower in nombre.lower():
+                        matches.append(ins)
+
+            if not matches:
+                show_error_message(
+                    "Insumo No Encontrado",
+                    f"No se encontraron coincidencias para: {term_norm}",
+                    self.frame
+                )
+                return
+
+            ins = matches[0]
+            display_text = f"{ins.get('nombre','')} ({ins.get('categoria','')})"
+            self.form_insumo_display.set(display_text)
+            self.form_insumo_id.set(ins.get('id', 0))
+
+            # Actualizar info de stock y límites
+            try:
+                self.stock_disponible.set(f"Disponible: {ins.get('cantidad_actual',0)} {ins.get('unidad_medida','')}")
+                self.form_cantidad_spinbox.config(to=ins.get('cantidad_actual', 0))
+            except Exception:
+                pass
+
+            extra = f"\nCoincidencias: {len(matches)}" if len(matches) > 1 else ""
+            show_info_message(
+                "Insumo Seleccionado",
+                f"Insumo: {ins.get('nombre','')}\n"
+                f"Categoría: {ins.get('categoria','N/A')}\n"
+                f"Unidad: {ins.get('unidad_medida','')}{extra}",
+                self.frame
+            )
+
+            # Validar cantidades/stock y formulario
+            self._validate_stock_availability()
+            self._validate_form_data()
+
+        except Exception as e:
+            self.logger.error(f"Error buscando insumo: {e}")
+            show_error_message("Error", f"Error buscando insumo: {str(e)}", self.frame)
     
     def _save_entrega(self):
         """Guarda la nueva entrega"""
@@ -1157,12 +1275,13 @@ El sistema validara automaticamente que:
             content.pack(fill=BOTH, expand=True)
             
             # Título
-            ttk.Label(
+            heading_label = ttk.Label(
                 content,
                 text=f"📋 Entrega #{entrega_id}",
                 font=("Helvetica", 14, "bold"),
                 bootstyle="primary"
-            ).pack(pady=(0, 15))
+            )
+            heading_label.pack(pady=(0, 15))
             
             # Información en texto
             details_text = tk.Text(content, height=20, wrap=tk.WORD)
@@ -1171,12 +1290,20 @@ El sistema validara automaticamente que:
             # Formatear información
             display_info = entrega['display_info']
             audit_info = entrega['audit_info']
+            # Determinar código público y actualizar títulos
+            codigo = display_info.get('codigo') or self.selected_entrega.get('codigo') or f"#{entrega_id}"
+            try:
+                details_window.title(f"Detalles de Entrega {codigo}")
+                heading_label.config(text=f"📋 Entrega {codigo}")
+            except Exception:
+                pass
             
             details_content = f"""INFORMACIÓN DE LA ENTREGA
 {'='*40}
 
 Fecha: {display_info['fecha_entrega']}
-ID: {display_info['id']}
+Código: {codigo}
+ID interno: {display_info['id']}
 
 EMPLEADO
 --------

@@ -463,15 +463,15 @@ CATEGORIAS_INSUMOS = [
 ]
 
 UNIDADES_MEDIDA = [
-    "unidad",
-    "caja",
-    "paquete", 
-    "resma",
-    "litro",
-    "kilogramo",
-    "metro",
-    "rollo",
-    "cartucho"
+    "Unidad",
+    "Caja",
+    "Paquete", 
+    "Resma",
+    "Litro",
+    "Kilogramo",
+    "Bolsa",
+    "Rollo",
+    "Cartucho"
 ]
 
 DEPARTAMENTOS = [
