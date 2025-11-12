@@ -1,22 +1,22 @@
 {
-  "last_backup": "2025-11-11T13:23:08.277353",
-  "last_success": "2025-11-11T13:23:08.277353",
-  "backup_count": 2,
-  "total_size_mb": 0.010239601135253906,
+  "last_backup": "2025-11-12T10:54:01.309395",
+  "last_success": "2025-11-12T10:54:01.309395",
+  "backup_count": 4,
+  "total_size_mb": 0.022459030151367188,
   "last_backup_info": {
     "type": "manual",
-    "filename": "manual_backup_backup_desde_dashboard_20251111_132308.db_20251111_132308.db.gz",
-    "filepath": "backups\\manual\\manual_backup_backup_desde_dashboard_20251111_132308.db_20251111_132308.db.gz",
-    "size_mb": 0.005184173583984375,
-    "created_at": "2025-11-11T13:23:08.277353",
+    "filename": "manual_backup_backup_desde_dashboard_20251112_105401.db_20251112_105401.db.gz",
+    "filepath": "backups\\manual\\manual_backup_backup_desde_dashboard_20251112_105401.db_20251112_105401.db.gz",
+    "size_mb": 0.006232261657714844,
+    "created_at": "2025-11-12T10:54:01.309395",
     "description": "backup_desde_dashboard",
     "compressed": true,
     "validation": {
       "valid": true,
       "integrity_check": "ok",
       "tables_found": 3,
-      "size_mb": 0.005184173583984375,
-      "validation_time": "2025-11-11T13:23:08.277251",
+      "size_mb": 0.006232261657714844,
+      "validation_time": "2025-11-12T10:54:01.309294",
       "error": null
     }
   }

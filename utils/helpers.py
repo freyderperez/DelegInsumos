@@ -475,16 +475,25 @@ UNIDADES_MEDIDA = [
 ]
 
 DEPARTAMENTOS = [
-    "Administración",
-    "Contabilidad",
-    "Recursos Humanos",
-    "Sistemas",
-    "Ventas",
-    "Marketing",
-    "Producción",
-    "Almacén",
-    "Mantenimiento",
-    "Seguridad"
+    "Delegados Departamentales",
+    "Archivos Central",
+    "Talento Humanos",
+    "Recepción Y Correspondencia",
+    "Almacen e Inventario",
+    "Cobro Coactivo",
+    "Jurídica",
+    "Ambiental",
+    "Registro Civil e Identificación",
+    "Centro de las Nuevas Tecnologías e IA",
+    "Planeación",
+    "Electoral",
+    "Control Interno",
+    "Administrativa y Financiero",
+    "Prensa",
+    "Bienestar",
+    "Registraduria Municipales",
+    "Nómina"
+
 ]
 
 def generar_id(prefijo: str, include_year: bool = True) -> str:
