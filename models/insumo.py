@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from utils.validators import validate_insumo_data, DataValidator
-from utils.helpers import get_stock_status, format_currency, format_date
+from utils.helpers import get_stock_status, format_date
 from utils import generar_id
 from exceptions.custom_exceptions import ValidationException
 
@@ -377,6 +377,6 @@ def calculate_inventory_value(insumos: list[Insumo]) -> Dict[str, Any]:
         'total_items': total_items,
         'total_insumos': len([i for i in insumos if i.activo]),
         'categories': categories,
-        'average_value_per_item': total_value / max(total_items, 1),
-        'formatted_total_value': format_currency(total_value)
+        'average_value_per_item': 0,
+        'formatted_total_value': 'N/A'
     }

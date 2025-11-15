@@ -69,7 +69,7 @@ class ReportesTab(LoggerMixin):
         ttk.Button(
             title_frame,
             text="🔄 Actualizar Lista",
-            command=self.refresh_data,
+            command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT)
         
@@ -377,10 +377,10 @@ class ReportesTab(LoggerMixin):
             self.reports_tree.selection_set(item_id)
             self.context_menu.post(event.x_root, event.y_root)
     
-    def refresh_data(self):
+    def refresh_data(self, quick: bool = False):
         """Actualiza la lista de reportes y estadísticas"""
         try:
-            self.logger.debug("Actualizando datos de reportes")
+            self.logger.debug(f"Actualizando datos de reportes (quick={quick})")
             
             # Obtener lista de reportes
             self.reportes_list = reportes_service.listar_reportes_disponibles()

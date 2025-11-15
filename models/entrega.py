@@ -9,7 +9,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from utils.validators import validate_entrega_data
-from utils.helpers import format_date, format_currency
+from utils.helpers import format_date
 from utils import generar_id
 from exceptions.custom_exceptions import ValidationException
 
