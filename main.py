@@ -1,7 +1,7 @@
 """
 DelegInsumos - Sistema de Gestión de Insumos de Oficina
 """
-8
+
 import sys
 import traceback
 from pathlib import Path

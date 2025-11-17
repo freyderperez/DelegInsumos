@@ -499,17 +499,13 @@ micro_insumos = MicroInsumosService()
 
 # Funciones de conveniencia para uso directo
 def crear_insumo(form_data: Dict[str, Any]) -> Dict[str, Any]:
-    """Función de conveniencia para crear insumo"""
     return micro_insumos.crear_insumo(form_data)
 
 def obtener_insumo(insumo_id: int) -> Dict[str, Any]:
-    """Función de conveniencia para obtener insumo"""
     return micro_insumos.obtener_insumo(insumo_id)
 
 def listar_insumos(active_only: bool = True) -> Dict[str, Any]:
-    """Función de conveniencia para listar insumos"""
     return micro_insumos.listar_insumos(active_only)
 
 def obtener_alertas_stock() -> Dict[str, Any]:
-    """Función de conveniencia para obtener alertas"""
     return micro_insumos.obtener_alertas_stock()
