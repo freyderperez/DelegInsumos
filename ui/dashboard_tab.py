@@ -176,20 +176,6 @@ class DashboardTab(LoggerMixin):
         )
         alerts_labelframe.pack(fill=X, pady=(0, 15))
         
-        # Resumen de alertas (badges)
-        summary_frame = ttk.Frame(alerts_labelframe)
-        summary_frame.pack(fill=X, pady=(0, 10))
-
-        self.alerts_crit_var = tk.StringVar(value="Críticas: 0")
-        self.alerts_high_var = tk.StringVar(value="Altas: 0")
-        self.alerts_med_var = tk.StringVar(value="Medias: 0")
-        self.alerts_low_var = tk.StringVar(value="Bajas: 0")
-
-        ttk.Label(summary_frame, textvariable=self.alerts_crit_var, bootstyle="danger", padding=5).pack(side=LEFT, padx=5)
-        ttk.Label(summary_frame, textvariable=self.alerts_high_var, bootstyle="warning", padding=5).pack(side=LEFT, padx=5)
-        ttk.Label(summary_frame, textvariable=self.alerts_med_var, bootstyle="info", padding=5).pack(side=LEFT, padx=5)
-        ttk.Label(summary_frame, textvariable=self.alerts_low_var, bootstyle="success", padding=5).pack(side=LEFT, padx=5)
-        
         # Frame para contenido de alertas
         alerts_content = ttk.Frame(alerts_labelframe)
         alerts_content.pack(fill=BOTH, expand=True)

@@ -289,7 +289,7 @@ class EmpleadosTab(LoggerMixin):
             text="🗑️ Limpiar",
             command=self._clear_form,
             bootstyle="outline-secondary",
-            width=10
+            width=12
         )
         self.form_clear_btn.pack(side=RIGHT, padx=(5, 0))
         
@@ -298,7 +298,7 @@ class EmpleadosTab(LoggerMixin):
             text="❌ Cancelar",
             command=self._cancel_form,
             bootstyle="outline-danger",
-            width=10
+            width=12
         )
         self.form_cancel_btn.pack(side=RIGHT)
         
@@ -491,8 +491,8 @@ class EmpleadosTab(LoggerMixin):
         try:
             self.logger.debug(f"Actualizando datos de empleados (quick={quick})")
             
-            # Obtener lista de empleados con estadísticas
-            result = micro_empleados.listar_empleados(active_only=True, include_stats=True)
+            # Obtener lista de empleados con estadísticas (incluir activos e inactivos)
+            result = micro_empleados.listar_empleados(active_only=False, include_stats=True)
             self.empleados_list = result.get('empleados', [])
             
             # Aplicar filtros actuales

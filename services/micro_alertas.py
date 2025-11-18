@@ -221,25 +221,6 @@ class MicroAlertasService(LoggerMixin):
                     self._add_alert(alert, key)
                     new_alerts.append(alert)
             
-            # Verificar stock excesivo
-            insumos_data = micro_insumos.listar_insumos(active_only=True)
-            for insumo_dict in insumos_data['insumos']:
-                if insumo_dict['cantidad_actual'] > insumo_dict['cantidad_maxima']:
-                    key = self._make_alert_key(AlertType.STOCK_EXCESO, insumo_dict['id'])
-                    if key not in self.active_alerts:
-                        alert = Alert(
-                            alert_type=AlertType.STOCK_EXCESO,
-                            severity=AlertSeverity.MEDIUM,
-                            title=f"Stock excesivo: {insumo_dict['nombre']}",
-                            message=f"El insumo '{insumo_dict['nombre']}' tiene stock por encima del máximo. "
-                                   f"Cantidad actual: {insumo_dict['cantidad_actual']} {insumo_dict['unidad_medida']}, "
-                                   f"Máximo recomendado: {insumo_dict['cantidad_maxima']} {insumo_dict['unidad_medida']}",
-                            entity_id=insumo_dict['id'],
-                            entity_type='insumo',
-                            data=insumo_dict
-                        )
-                        self._add_alert(alert, key)
-                        new_alerts.append(alert)
         
         except Exception as e:
             self.logger.error(f"Error verificando alertas de stock: {e}")

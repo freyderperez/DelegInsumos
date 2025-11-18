@@ -138,6 +138,56 @@ class MicroEntregasService(LoggerMixin):
         return result
     
     @service_exception_handler("MicroEntregasService")
+    def eliminar_entrega(self, entrega_id: int) -> Dict[str, Any]:
+        """
+        Elimina una entrega del sistema.
+        
+        Nota importante:
+            Esta operación elimina el registro de la entrega, pero NO ajusta
+            automáticamente el stock del insumo asociado. Si la entrega fue
+            registrada por error, se recomienda corregir manualmente el stock
+            desde la pestaña de Insumos.
+        
+        Args:
+            entrega_id: ID de la entrega a eliminar
+        
+        Returns:
+            Diccionario con resultado de la operación
+        
+        Raises:
+            RecordNotFoundException: Si la entrega no existe
+        """
+        self.logger.info(f"Eliminando entrega ID: {entrega_id}")
+        
+        # Verificar que la entrega exista
+        entrega_data = self._repository.get_by_id(entrega_id)
+        if not entrega_data:
+            raise RecordNotFoundException("entrega", str(entrega_id))
+        
+        # Guardar datos para logging/mensajes
+        codigo = entrega_data.get("codigo") or f"#{entrega_id}"
+        empleado_nombre = entrega_data.get("empleado_nombre", "N/D")
+        insumo_nombre = entrega_data.get("insumo_nombre", "N/D")
+        cantidad = entrega_data.get("cantidad", 0)
+        
+        # Eliminar la entrega
+        success = self._repository.delete(entrega_id)
+        if not success:
+            raise BusinessLogicException("No se pudo eliminar la entrega seleccionada")
+        
+        log_operation(
+            "ENTREGA_ELIMINADA",
+            f"ID: {entrega_id}, Código: {codigo}, Empleado: {empleado_nombre}, "
+            f"Insumo: {insumo_nombre}, Cantidad: {cantidad}"
+        )
+        self.logger.info(f"Entrega {entrega_id} eliminada exitosamente")
+        
+        return {
+            "success": True,
+            "message": f"Entrega {codigo} eliminada exitosamente"
+        }
+    
+    @service_exception_handler("MicroEntregasService")
     def listar_entregas(self, limit: Optional[int] = 100, offset: int = 0, 
                        include_stats: bool = True) -> Dict[str, Any]:
         """
@@ -554,3 +604,7 @@ def obtener_entregas_hoy() -> Dict[str, Any]:
 def obtener_estadisticas_entregas() -> Dict[str, Any]:
     """Función de conveniencia para obtener estadísticas"""
     return micro_entregas.obtener_estadisticas_entregas()
+
+def eliminar_entrega(entrega_id: int) -> Dict[str, Any]:
+    """Función de conveniencia para eliminar una entrega"""
+    return micro_entregas.eliminar_entrega(entrega_id)

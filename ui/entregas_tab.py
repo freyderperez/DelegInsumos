@@ -248,6 +248,15 @@ class EntregasTab(LoggerMixin):
         )
         self.stats_label.pack(side=LEFT)
         
+        # Botón para eliminar la entrega seleccionada del historial
+        ttk.Button(
+            stats_frame,
+            text="🗑️ Eliminar Seleccionada",
+            command=self._delete_selected_entrega,
+            bootstyle="danger-outline",
+            width=22
+        ).pack(side=RIGHT, padx=(5, 5))
+        
         self.period_stats_label = ttk.Label(
             stats_frame,
             text="",
@@ -284,7 +293,7 @@ class EntregasTab(LoggerMixin):
             text="🗑️ Limpiar",
             command=self._clear_form,
             bootstyle="outline-secondary",
-            width=10
+            width=12
         )
         self.form_clear_btn.pack(side=RIGHT, padx=(5, 0))
         
@@ -293,7 +302,7 @@ class EntregasTab(LoggerMixin):
             text="❌ Cancelar",
             command=self._cancel_form,
             bootstyle="outline-danger",
-            width=10
+            width=12
         )
         self.form_cancel_btn.pack(side=RIGHT)
         
@@ -322,20 +331,14 @@ class EntregasTab(LoggerMixin):
             empleado_frame,
             textvariable=self.form_empleado_display,
             values=[],
-            state="readonly",
+            state="normal",
             bootstyle="primary"
         )
         self.form_empleado_combo.pack(side=LEFT, fill=X, expand=True)
         self.form_empleado_combo.bind("<<ComboboxSelected>>", self._on_empleado_selected)
         
-        # Botón buscar empleado por código o nombre
-        ttk.Button(
-            empleado_frame,
-            text="🔎",
-            command=self._search_empleado_by_cedula,
-            bootstyle="outline-primary",
-            width=3
-        ).pack(side=RIGHT, padx=(5, 0))
+        # Filtro dinámico al escribir para sugerir empleados
+        self.form_empleado_combo.bind("<KeyRelease>", self._on_empleado_text_changed)
         
         # Selección de insumo
         ttk.Label(fields_frame, text="* Insumo:").grid(row=1, column=0, sticky="w", pady=2)
@@ -347,11 +350,14 @@ class EntregasTab(LoggerMixin):
             insumo_frame,
             textvariable=self.form_insumo_display,
             values=[],
-            state="readonly",
+            state="normal",
             bootstyle="primary"
         )
         self.form_insumo_combo.pack(side=LEFT, fill=X, expand=True)
         self.form_insumo_combo.bind("<<ComboboxSelected>>", self._on_insumo_selected)
+        
+        # Filtro dinámico al escribir para sugerir insumos
+        self.form_insumo_combo.bind("<KeyRelease>", self._on_insumo_text_changed)
         
         # Información de stock disponible
         self.stock_info_label = ttk.Label(
@@ -361,14 +367,6 @@ class EntregasTab(LoggerMixin):
             bootstyle="info"
         )
         self.stock_info_label.pack(side=RIGHT, padx=(5, 0))
-        # Botón buscar insumo por código o nombre
-        ttk.Button(
-            insumo_frame,
-            text="🔎",
-            command=self._search_insumo_by_codigo_o_nombre,
-            bootstyle="outline-primary",
-            width=3
-        ).pack(side=RIGHT, padx=(5, 0))
         
         # Cantidad a entregar
         ttk.Label(fields_frame, text="* Cantidad:").grid(row=2, column=0, sticky="w", pady=2)
@@ -763,6 +761,64 @@ class EntregasTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error seleccionando insumo: {e}")
     
+    def _on_empleado_text_changed(self, event=None):
+        """Filtra dinámicamente la lista de empleados según el texto escrito en el combobox."""
+        try:
+            # Ignorar teclas de navegación para no interferir con la selección
+            if event and event.keysym in ("Up", "Down", "Left", "Right", "Return", "Tab", "Escape"):
+                return
+            
+            typed = self.form_empleado_display.get().strip().lower()
+            base_values = ["Seleccione empleado..."] + [
+                emp['display_name'] for emp in self.empleados_disponibles
+            ]
+            
+            if not typed:
+                filtered = base_values
+            else:
+                filtered = ["Seleccione empleado..."] + [
+                    v for v in base_values[1:] if typed in v.lower()
+                ]
+            
+            self.form_empleado_combo['values'] = filtered
+            
+            # Desplegar el combobox para mostrar coincidencias
+            try:
+                self.form_empleado_combo.event_generate("<Down>")
+            except Exception:
+                pass
+        except Exception as e:
+            self.logger.debug(f"Error filtrando empleados en combobox: {e}")
+    
+    def _on_insumo_text_changed(self, event=None):
+        """Filtra dinámicamente la lista de insumos según el texto escrito en el combobox."""
+        try:
+            if event and event.keysym in ("Up", "Down", "Left", "Right", "Return", "Tab", "Escape"):
+                return
+            
+            typed = self.form_insumo_display.get().strip().lower()
+            base_values = ["Seleccione insumo..."] + [
+                f"{insumo['nombre']} ({insumo['categoria']})"
+                for insumo in self.insumos_disponibles
+            ]
+            
+            if not typed:
+                filtered = base_values
+            else:
+                filtered = ["Seleccione insumo..."] + [
+                    v for v in base_values[1:] if typed in v.lower()
+                ]
+            
+            self.form_insumo_combo['values'] = filtered
+            
+            # Desplegar el combobox para mostrar coincidencias
+            try:
+                self.form_insumo_combo.event_generate("<Down>")
+            except Exception:
+                pass
+        except Exception as e:
+            self.logger.debug(f"Error filtrando insumos en combobox: {e}")
+     
     def _validate_stock_availability(self, event=None):
         """Valida la disponibilidad de stock para la cantidad solicitada"""
         try:
@@ -1023,148 +1079,6 @@ El sistema validara automaticamente que:
         log_user_action("CANCEL_FORM", "form_cancelled", "EntregasTab")
         self._clear_form()
     
-    def _search_empleado_by_cedula(self):
-        """
-        Buscar empleado por Código EMP-XXXX, cédula o nombre.
-        (Se mantiene el nombre del método por compatibilidad con el botón existente)
-        """
-        log_user_action("CLICK", "search_empleado_codigo_nombre", "EntregasTab")
-        term = tk.simpledialog.askstring(
-            "Buscar Empleado",
-            "Ingrese Código EMP-XXXX, Cédula o Nombre del empleado:",
-            parent=self.frame
-        )
-        if not term:
-            return
-
-        try:
-            term_norm = term.strip()
-            empleados_data = micro_empleados.listar_empleados(active_only=True, include_stats=False)
-            candidatos = empleados_data.get('empleados', [])
-
-            matches: List[Dict[str, Any]] = []
-            term_upper = term_norm.upper()
-            term_lower = term_norm.lower()
-
-            for emp in candidatos:
-                codigo = (emp.get('codigo') or '').upper()
-                cedula = (emp.get('cedula') or '').strip()
-                nombre = (emp.get('nombre_completo') or '')
-                if term_upper.startswith("EMP-"):
-                    if codigo == term_upper:
-                        matches.append(emp)
-                elif term_norm.isdigit():
-                    if cedula == term_norm:
-                        matches.append(emp)
-                else:
-                    if term_lower in nombre.lower():
-                        matches.append(emp)
-
-            if not matches:
-                show_error_message(
-                    "Empleado No Encontrado",
-                    f"No se encontraron coincidencias para: {term_norm}",
-                    self.frame
-                )
-                return
-
-            emp = matches[0]
-            if not emp.get('activo', True):
-                show_error_message(
-                    "Empleado Inactivo",
-                    f"El empleado {emp.get('nombre_completo','N/A')} está inactivo y no puede recibir insumos.",
-                    self.frame
-                )
-                return
-
-            # Seleccionar en UI
-            display_name = f"{emp.get('nombre_completo','')} ({emp.get('cedula','')})"
-            self.form_empleado_display.set(display_name)
-            self.form_empleado_id.set(emp.get('id', 0))
-
-            # Feedback
-            extra = f"\nCoincidencias: {len(matches)}" if len(matches) > 1 else ""
-            show_info_message(
-                "Empleado Seleccionado",
-                f"Empleado: {emp.get('nombre_completo','')}\n"
-                f"Cargo: {emp.get('cargo','N/A')}\n"
-                f"Departamento: {emp.get('departamento','N/A')}{extra}",
-                self.frame
-            )
-
-            # Validar formulario tras selección
-            self._validate_form_data()
-
-        except Exception as e:
-            self.logger.error(f"Error buscando empleado: {e}")
-            show_error_message("Error", f"Error buscando empleado: {str(e)}", self.frame)
-
-    def _search_insumo_by_codigo_o_nombre(self):
-        """Busca insumo por Código INS-XXXX o por nombre y lo selecciona en el formulario."""
-        log_user_action("CLICK", "search_insumo_codigo_nombre", "EntregasTab")
-        term = tk.simpledialog.askstring(
-            "Buscar Insumo",
-            "Ingrese Código INS-XXXX o Nombre del insumo:",
-            parent=self.frame
-        )
-        if not term:
-            return
-
-        try:
-            term_norm = term.strip()
-            insumos_data = micro_insumos.listar_insumos(active_only=True)
-            insumos = insumos_data.get('insumos', [])
-
-            matches: List[Dict[str, Any]] = []
-            term_upper = term_norm.upper()
-            term_lower = term_norm.lower()
-
-            for ins in insumos:
-                codigo = (ins.get('codigo') or '').upper()
-                nombre = (ins.get('nombre') or '')
-                if term_upper.startswith("INS-"):
-                    if codigo == term_upper:
-                        matches.append(ins)
-                else:
-                    if term_lower in nombre.lower():
-                        matches.append(ins)
-
-            if not matches:
-                show_error_message(
-                    "Insumo No Encontrado",
-                    f"No se encontraron coincidencias para: {term_norm}",
-                    self.frame
-                )
-                return
-
-            ins = matches[0]
-            display_text = f"{ins.get('nombre','')} ({ins.get('categoria','')})"
-            self.form_insumo_display.set(display_text)
-            self.form_insumo_id.set(ins.get('id', 0))
-
-            # Actualizar info de stock y límites
-            try:
-                self.stock_disponible.set(f"Disponible: {ins.get('cantidad_actual',0)} {ins.get('unidad_medida','')}")
-                self.form_cantidad_spinbox.config(to=ins.get('cantidad_actual', 0))
-            except Exception:
-                pass
-
-            extra = f"\nCoincidencias: {len(matches)}" if len(matches) > 1 else ""
-            show_info_message(
-                "Insumo Seleccionado",
-                f"Insumo: {ins.get('nombre','')}\n"
-                f"Categoría: {ins.get('categoria','N/A')}\n"
-                f"Unidad: {ins.get('unidad_medida','')}{extra}",
-                self.frame
-            )
-
-            # Validar cantidades/stock y formulario
-            self._validate_stock_availability()
-            self._validate_form_data()
-
-        except Exception as e:
-            self.logger.error(f"Error buscando insumo: {e}")
-            show_error_message("Error", f"Error buscando insumo: {str(e)}", self.frame)
     
     def _save_entrega(self):
         """Guarda la nueva entrega"""
@@ -1299,36 +1213,36 @@ El sistema validara automaticamente que:
                 pass
             
             details_content = f"""INFORMACIÓN DE LA ENTREGA
-{'='*40}
-
-Fecha: {display_info['fecha_entrega']}
-Código: {codigo}
-ID interno: {display_info['id']}
-
-EMPLEADO
---------
-Nombre: {display_info['empleado_nombre']}
-Cédula: {display_info['empleado_cedula']}
-Cargo: {display_info['empleado_cargo']}
-Departamento: {display_info['empleado_departamento']}
-
-INSUMO
-------
-Nombre: {display_info['insumo_nombre']}
-Categoría: {display_info['insumo_categoria']}
-Cantidad entregada: {display_info['cantidad_completa']}
-
-DETALLES ADICIONALES
--------------------
-Entregado por: {display_info['entregado_por']}
-Observaciones: {display_info['observaciones']}
-Prioridad: {display_info['prioridad']}
-Es reciente: {display_info['es_reciente']}
-Alta cantidad: {display_info['es_alta_cantidad']}
-
-RESUMEN
--------
-{display_info['resumen']}"""
+ {'='*40}
+ 
+ Fecha: {display_info['fecha_entrega']}
+ Código: {codigo}
+ ID interno: {display_info['id']}
+ 
+ EMPLEADO
+ --------
+ Nombre: {display_info['empleado_nombre']}
+ Cédula: {display_info['empleado_cedula']}
+ Cargo: {display_info['empleado_cargo']}
+ Departamento: {display_info['empleado_departamento']}
+ 
+ INSUMO
+ ------
+ Nombre: {display_info['insumo_nombre']}
+ Categoría: {display_info['insumo_categoria']}
+ Cantidad entregada: {display_info['cantidad_completa']}
+ 
+ DETALLES ADICIONALES
+ -------------------
+ Entregado por: {display_info['entregado_por']}
+ Observaciones: {display_info['observaciones']}
+ Prioridad: {display_info['prioridad']}
+ Es reciente: {display_info['es_reciente']}
+ Alta cantidad: {display_info['es_alta_cantidad']}
+ 
+ RESUMEN
+ -------
+ {display_info['resumen']}"""
             
             details_text.insert("1.0", details_content)
             details_text.config(state="disabled")
@@ -1336,3 +1250,66 @@ RESUMEN
         except Exception as e:
             self.logger.error(f"Error mostrando detalles de entrega: {e}")
             show_error_message("Error", f"Error cargando detalles: {str(e)}", self.frame)
+    
+    def _delete_selected_entrega(self):
+        """Elimina la entrega seleccionada del historial."""
+        if not self.selected_entrega:
+            show_error_message(
+                "Sin selección",
+                "Seleccione una entrega de la lista para poder eliminarla.",
+                self.frame
+            )
+            return
+        
+        try:
+            entrega_id = int(self.selected_entrega.get('id'))
+            codigo = self.selected_entrega.get('codigo') or f"#{entrega_id}"
+            empleado = self.selected_entrega.get('empleado_nombre', 'N/A')
+            insumo = self.selected_entrega.get('insumo_nombre', 'N/A')
+            
+            if not ask_yes_no(
+                "Confirmar Eliminación",
+                (
+                    f"¿Está seguro que desea eliminar la entrega {codigo}?\n\n"
+                    f"Empleado: {empleado}\n"
+                    f"Insumo: {insumo}\n\n"
+                    "Nota: Esta acción no ajusta automáticamente el stock del insumo.\n"
+                    "Si fue un registro errado, recuerde corregir el stock manualmente "
+                    "desde la pestaña de Insumos."
+                ),
+                self.frame
+            ):
+                return
+            
+            result = micro_entregas.eliminar_entrega(entrega_id)
+            
+            if result.get('success'):
+                show_info_message(
+                    "Entrega Eliminada",
+                    result.get('message', "La entrega fue eliminada correctamente."),
+                    self.frame
+                )
+                
+                # Refrescar lista y formulario
+                self.refresh_data(quick=True)
+                self._clear_form()
+                
+                # Actualizar dashboard si está disponible
+                if hasattr(self.app, 'dashboard_tab'):
+                    self.app.dashboard_tab.refresh_data(quick=True)
+                
+                log_user_action(
+                    "DELETE_ENTREGA",
+                    "entrega_deleted",
+                    f"ID: {entrega_id}, Código: {codigo}"
+                )
+            else:
+                show_error_message(
+                    "Error",
+                    "No se pudo eliminar la entrega seleccionada.",
+                    self.frame
+                )
+        
+        except Exception as e:
+            self.logger.error(f"Error eliminando entrega: {e}")
+            show_error_message("Error", f"Error eliminando entrega: {str(e)}", self.frame)

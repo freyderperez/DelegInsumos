@@ -8,6 +8,7 @@ from datetime import datetime, date
 import sqlite3
 import shutil
 import os
+from pathlib import Path
 
 from database.connection import db_connection, get_db_path
 from utils.logger import LoggerMixin
@@ -822,7 +823,7 @@ class EntregaRepository(BaseRepository):
             
             # Entregas esta semana
             week_sql = """
-            SELECT COUNT(*) FROM entregas 
+            SELECT COUNT(*) FROM entregas
             WHERE DATE(fecha_entrega) >= DATE('now', '-7 days')
             """
             week_rows = db_connection.execute_query(week_sql)
@@ -869,8 +870,32 @@ class EntregaRepository(BaseRepository):
         except Exception as e:
             self.logger.error(f"Error contando entregas: {e}")
             raise DatabaseException(f"Error contando entregas: {e}")
-
-
+    
+    def delete(self, entrega_id: int) -> bool:
+        """
+        Elimina una entrega de forma permanente.
+        
+        Args:
+            entrega_id: ID de la entrega
+            
+        Returns:
+            True si la eliminación fue exitosa
+        """
+        try:
+            sql = "DELETE FROM entregas WHERE id = ?"
+            rows_affected = db_connection.execute_command(sql, (entrega_id,))
+            
+            if rows_affected > 0:
+                self.logger.info(f"Entrega {entrega_id} eliminada físicamente")
+                return True
+            
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Error eliminando entrega {entrega_id}: {e}")
+            raise DatabaseException(f"Error eliminando entrega: {e}")
+ 
+ 
 # Instancias globales de los repositorios
 insumo_repo = InsumoRepository()
 empleado_repo = EmpleadoRepository()
