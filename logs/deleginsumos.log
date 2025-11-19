@@ -14433,3 +14433,8 @@ _tkinter.TclError: Invalid column index nombre
 2025-11-18 15:34:30 - deleginsumos.empleadostab - INFO - Lista de empleados actualizada: 7 empleados (quick=False)
 2025-11-18 15:34:30 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLEAR_FORM en form_cleared | EmpleadosTab
 2025-11-18 15:34:30 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLEAR_FORM en form_cleared | EmpleadosTab
+2025-11-18 15:34:34 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-18 15:34:34 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-18 15:34:34 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 7, Activos: False
+2025-11-18 15:34:34 - deleginsumos.empleadostab - INFO - Lista de empleados actualizada: 7 empleados (quick=True)
+2025-11-18 15:34:34 - deleginsumos.empleadostab - INFO - Lista de empleados actualizada: 7 empleados (quick=True)
