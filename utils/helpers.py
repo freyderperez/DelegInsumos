@@ -376,13 +376,11 @@ def get_stock_status(current: int, minimum: int, maximum: int) -> Dict[str, Any]
     """
     Determina el estado del stock de un insumo.
     
-    Args:
-        current: Cantidad actual
-        minimum: Cantidad mínima
-        maximum: Cantidad máxima
-        
-    Returns:
-        Diccionario con estado del stock
+    Colores estandarizados:
+      - CRÍTICO: Rojo
+      - BAJO: Naranja
+      - NORMAL: Verde
+      - EXCESO: Azul (informativo, no error)
     """
     if current <= 0:
         status = "CRITICO"
@@ -394,7 +392,7 @@ def get_stock_status(current: int, minimum: int, maximum: int) -> Dict[str, Any]
         message = "Stock por debajo del mínimo"
     elif current >= maximum:
         status = "EXCESO"
-        color = "#9E9E9E"  # Gris
+        color = "#2196F3"  # Azul
         message = "Stock por encima del máximo"
     else:
         status = "NORMAL"
@@ -408,7 +406,8 @@ def get_stock_status(current: int, minimum: int, maximum: int) -> Dict[str, Any]
         "color": color,
         "message": message,
         "percentage": percentage,
-        "needs_attention": status in ["CRITICO", "BAJO", "EXCESO"]
+        # Solo se consideran alerta real: CRÍTICO / BAJO
+        "needs_attention": status in ["CRITICO", "BAJO"]
     }
 
 

@@ -204,8 +204,16 @@ class MicroEmpleadosService(LoggerMixin):
         if not existing_data:
             raise RecordNotFoundException("empleado", str(empleado_id))
         
-        # Validar los nuevos datos
+        # Validar los nuevos datos (campos básicos)
         validated_data = validate_empleado_data(form_data)
+        
+        # Incluir campos adicionales que no valida el helper pero son necesarios
+        # - activo: permite activar/desactivar el empleado desde el checkbox
+        # - nota: comentario libre sobre el empleado
+        if 'activo' in form_data:
+            validated_data['activo'] = bool(form_data['activo'])
+        if 'nota' in form_data:
+            validated_data['nota'] = form_data['nota']
         
         # Verificar duplicados por cédula (excluyendo el mismo registro)
         if 'cedula' in validated_data:

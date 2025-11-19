@@ -586,10 +586,12 @@ class EmpleadosTab(LoggerMixin):
                 # Guardar datos completos en un mapa auxiliar
                 self._item_data[item_id] = empleado.copy()
             
-            # Configurar colores por estado y zebra
+            # Configurar colores por estado:
+            # - Activos: verde claro (zebra)
+            # - Inactivos: gris
             self.empleados_tree.tag_configure("inactive", background="#F5F5F5", foreground="#616161")  # Inactivo (gris claro)
-            self.empleados_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000") # Activos (par)
-            self.empleados_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")  # Activos (impar)            
+            self.empleados_tree.tag_configure("zebra_even", background="#E8F5E9", foreground="#1B5E20") # Activo (par, verde)
+            self.empleados_tree.tag_configure("zebra_odd", background="#C8E6C9", foreground="#1B5E20")  # Activo (impar, verde)
         except Exception as e:
             self.logger.error(f"Error actualizando visualización de empleados: {e}")
     

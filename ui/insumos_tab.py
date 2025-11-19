@@ -602,12 +602,15 @@ class InsumosTab(LoggerMixin):
                 self._item_data[item_id] = insumo
             
             # Configurar colores por tag (estados especiales)
-            self.insumos_tree.tag_configure("critico", background="#FFCDD2", foreground="#B71C1C")  # Rojo claro
-            self.insumos_tree.tag_configure("bajo", background="#FFE0B2", foreground="#BF360C")     # Naranja claro
-            self.insumos_tree.tag_configure("exceso", background="#F5F5F5", foreground="#616161")   # Gris
-            # Zebra pattern para filas normales
-            self.insumos_tree.tag_configure("zebra_even", background="#F7FAFF", foreground="#000000")
-            self.insumos_tree.tag_configure("zebra_odd", background="#EDF3FF", foreground="#000000")
+            # Crítico: rojo
+            self.insumos_tree.tag_configure("critico", background="#FFCDD2", foreground="#B71C1C")
+            # Bajo: naranja
+            self.insumos_tree.tag_configure("bajo", background="#FFE0B2", foreground="#BF360C")
+            # Exceso: azul (informativo, no error)
+            self.insumos_tree.tag_configure("exceso", background="#E3F2FD", foreground="#0D47A1")
+            # Zebra pattern para filas en estado NORMAL (verde suave)
+            self.insumos_tree.tag_configure("zebra_even", background="#E8F5E9", foreground="#1B5E20")
+            self.insumos_tree.tag_configure("zebra_odd", background="#C8E6C9", foreground="#1B5E20")
             
         except Exception as e:
             self.logger.error(f"Error actualizando visualización del tree: {e}")

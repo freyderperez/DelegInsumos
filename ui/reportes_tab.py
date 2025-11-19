@@ -4,7 +4,7 @@ Interfaz para generar, visualizar y gestionar reportes del sistema
 """
 
 import tkinter as tk
-from tkinter import messagebox, filedialog
+from tkinter import messagebox
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date, timedelta
 from pathlib import Path
@@ -21,9 +21,10 @@ except ImportError:
 from services.reportes_service import reportes_service
 from utils.logger import LoggerMixin, log_user_action
 from utils.helpers import (
-    format_date, show_error_message, show_info_message, 
-    ask_yes_no, select_save_file
+    format_date, show_error_message, show_info_message,
+    ask_yes_no
 )
+from config.config_manager import config
 
 
 class ReportesTab(LoggerMixin):
@@ -226,10 +227,24 @@ class ReportesTab(LoggerMixin):
         )
         config_frame.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
         
-        # Formato de salida por defecto
-        ttk.Label(config_frame, text="Formato por defecto:").pack(anchor="w")
+        # Formato de salida por defecto para reportes de Empleados, Alertas y Entregas por período
+        ttk.Label(
+            config_frame,
+            text="Formato por defecto:"
+        ).pack(anchor="w")
         
-        self.format_var = tk.StringVar(value="PDF")
+        # Leer formato por defecto desde configuración (si existe)
+        reports_cfg = config.get_reports_config()
+        default_format = (
+            reports_cfg.get("formato_defecto_empleados")
+            or reports_cfg.get("formato_defecto")
+            or "PDF"
+        )
+        default_format = str(default_format).upper()
+        if default_format not in ("PDF", "EXCEL"):
+            default_format = "PDF"
+        
+        self.format_var = tk.StringVar(value=default_format)
         format_combo = ttk.Combobox(
             config_frame,
             textvariable=self.format_var,
@@ -240,14 +255,6 @@ class ReportesTab(LoggerMixin):
         format_combo.pack(fill=X, pady=(2, 10))
         
         # Botones de gestión
-        ttk.Button(
-            config_frame,
-            text="🧹 Limpiar Reportes Antiguos",
-            command=self._cleanup_old_reports,
-            bootstyle="danger-outline",
-            width=20
-        ).pack(fill=X, pady=2)
-        
         ttk.Button(
             config_frame,
             text="📁 Abrir Directorio",
@@ -335,33 +342,16 @@ class ReportesTab(LoggerMixin):
         
         ttk.Button(
             actions_frame,
-            text="💾 Guardar Como...",
-            command=self._save_report_as,
-            bootstyle="secondary"
-        ).pack(side=LEFT, padx=(0, 5))
-        
-        ttk.Button(
-            actions_frame,
             text="🗑️ Eliminar",
             command=self._delete_selected_report,
             bootstyle="danger-outline"
         ).pack(side=LEFT, padx=(0, 5))
-        
-        # Estadísticas de reportes
-        self.stats_text = tk.Text(
-            actions_frame,
-            height=3,
-            width=40,
-            wrap=tk.WORD
-        )
-        self.stats_text.pack(side=RIGHT, fill=X, expand=True, padx=(10, 0))
     
     def _create_context_menu(self):
         """Crea menú contextual para la lista de reportes"""
         
         self.context_menu = tk.Menu(self.reports_tree, tearoff=0)
         self.context_menu.add_command(label="👁️ Abrir", command=self._open_selected_report)
-        self.context_menu.add_command(label="💾 Guardar como...", command=self._save_report_as)
         self.context_menu.add_separator()
         self.context_menu.add_command(label="🗑️ Eliminar", command=self._delete_selected_report)
         
@@ -378,19 +368,15 @@ class ReportesTab(LoggerMixin):
             self.context_menu.post(event.x_root, event.y_root)
     
     def refresh_data(self, quick: bool = False):
-        """Actualiza la lista de reportes y estadísticas"""
+        """Actualiza la lista de reportes"""
         try:
             self.logger.debug(f"Actualizando datos de reportes (quick={quick})")
             
             # Obtener lista de reportes
             self.reportes_list = reportes_service.listar_reportes_disponibles()
             
-            # Obtener estadísticas
-            stats = reportes_service.obtener_estadisticas_reportes()
-            
             # Actualizar UI
             self._update_reports_tree()
-            self._update_stats_display(stats)
             
             self.logger.info("Datos de reportes actualizados")
             
@@ -449,37 +435,6 @@ class ReportesTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error actualizando tree de reportes: {e}")
     
-    def _update_stats_display(self, stats: Dict[str, Any]):
-        """Actualiza la visualización de estadísticas"""
-        try:
-            # Limpiar texto
-            self.stats_text.delete("1.0", tk.END)
-            
-            # Formatear estadísticas
-            stats_content = f"ESTADÍSTICAS DE REPORTES\n"
-            stats_content += f"{'=' * 30}\n\n"
-            stats_content += f"Total reportes: {stats.get('total_reportes', 0)}\n"
-            stats_content += f"Tamaño total: {stats.get('total_size_mb', 0):.2f} MB\n\n"
-            
-            # Por tipo
-            if 'by_type' in stats and stats['by_type']:
-                stats_content += "Por tipo:\n"
-                for tipo, cantidad in stats['by_type'].items():
-                    stats_content += f"  • {tipo}: {cantidad}\n"
-                stats_content += "\n"
-            
-            # Por formato
-            if 'by_format' in stats and stats['by_format']:
-                stats_content += "Por formato:\n"
-                for formato, cantidad in stats['by_format'].items():
-                    stats_content += f"  • {formato}: {cantidad}\n"
-            
-            # Insertar contenido
-            self.stats_text.insert("1.0", stats_content)
-            self.stats_text.config(state="disabled")
-            
-        except Exception as e:
-            self.logger.error(f"Error actualizando estadísticas: {e}")
     
     def _get_date_from_dateentry(self, widget) -> date:
         """
@@ -602,8 +557,11 @@ class ReportesTab(LoggerMixin):
             show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
     
     def _generate_deliveries_pdf(self):
-        """Genera reporte de entregas en PDF"""
-        log_user_action("CLICK", "generate_deliveries_pdf", "ReportesTab")
+        """
+        Genera reporte de entregas usando el formato por defecto seleccionado (PDF o Excel).
+        Aplica al reporte de período.
+        """
+        log_user_action("CLICK", "generate_deliveries_report", "ReportesTab")
         
         try:
             # Obtener fechas seleccionadas
@@ -619,67 +577,163 @@ class ReportesTab(LoggerMixin):
                 )
                 return
             
-            if hasattr(self.app, 'update_status'):
-                self.app.update_status("Generando reporte de entregas...")
+            fmt = (self.format_var.get() or "PDF").upper()
             
-            result = reportes_service.generar_reporte_entregas_pdf(fecha_inicio, fecha_fin)
-            
-            if result['success']:
+            if fmt == "EXCEL":
+                # Reporte de entregas en Excel
                 if hasattr(self.app, 'update_status'):
-                    self.app.update_status("Reporte de entregas generado", "success")
+                    self.app.update_status("Generando reporte de entregas Excel...")
                 
-                show_info_message(
-                    "Reporte Generado",
-                    f"Reporte de entregas creado:\n\n"
-                    f"📋 {result['filename']}\n"
-                    f"📅 Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}\n"
-                    f"📄 Entregas incluidas: {result['total_entregas']}\n\n"
-                    f"¿Desea abrir el reporte?",
-                    self.frame
-                )
+                result = reportes_service.generar_reporte_entregas_excel(fecha_inicio, fecha_fin)
                 
-                if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
-                    self._open_file(result['filepath'])
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de entregas Excel generado", "success")
+                    
+                    show_info_message(
+                        "Reporte de Entregas",
+                        f"Reporte generado:\n\n"
+                        f"📊 {result['filename']}\n"
+                        f"📅 Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}\n"
+                        f"📁 Tamaño: {result['size_mb']} MB\n"
+                        f"📄 Entregas incluidas: {result.get('total_entregas', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message(
+                        "Error",
+                        "No se pudo generar el reporte de entregas en Excel",
+                        self.frame
+                    )
+            else:
+                # Comportamiento original: PDF
+                if hasattr(self.app, 'update_status'):
+                    self.app.update_status("Generando reporte de entregas PDF...")
                 
-                self.refresh_data()
+                result = reportes_service.generar_reporte_entregas_pdf(fecha_inicio, fecha_fin)
                 
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de entregas PDF generado", "success")
+                    
+                    show_info_message(
+                        "Reporte Generado",
+                        f"Reporte de entregas creado:\n\n"
+                        f"📋 {result['filename']}\n"
+                        f"📅 Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}\n"
+                        f"📄 Entregas incluidas: {result.get('total_entregas', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message(
+                        "Error",
+                        "No se pudo generar el reporte de entregas en PDF",
+                        self.frame
+                    )
+        
         except Exception as e:
-            self.logger.error(f"Error generando reporte entregas: {e}")
+            self.logger.error(f"Error generando reporte de entregas: {e}")
             if hasattr(self.app, 'update_status'):
                 self.app.update_status("Error generando reporte", "danger")
             show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
     
     def _generate_alerts_pdf(self):
-        """Genera reporte de alertas en PDF"""
-        log_user_action("CLICK", "generate_alerts_pdf", "ReportesTab")
+        """
+        Genera reporte de alertas usando el formato por defecto seleccionado (PDF o Excel).
+        Mantiene compatibilidad con el botón existente.
+        """
+        log_user_action("CLICK", "generate_alerts_report", "ReportesTab")
         
         try:
-            if hasattr(self.app, 'update_status'):
-                self.app.update_status("Generando reporte de alertas...")
+            fmt = (self.format_var.get() or "PDF").upper()
             
-            result = reportes_service.generar_reporte_alertas_pdf()
-            
-            if result['success']:
+            if fmt == "EXCEL":
+                # Reporte de alertas en Excel
                 if hasattr(self.app, 'update_status'):
-                    self.app.update_status("Reporte de alertas generado", "success")
+                    self.app.update_status("Generando reporte de alertas Excel...")
                 
-                show_info_message(
-                    "Reporte Generado",
-                    f"Reporte de alertas creado:\n\n"
-                    f"⚠️ {result['filename']}\n"
-                    f"📊 Alertas incluidas: {result['total_alertas']}\n"
-                    f"🔴 Críticas: {result['alertas_criticas']}\n\n"
-                    f"¿Desea abrir el reporte?",
-                    self.frame
-                )
+                result = reportes_service.generar_reporte_alertas_excel()
                 
-                if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
-                    self._open_file(result['filepath'])
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de alertas Excel generado", "success")
+                    
+                    show_info_message(
+                        "Reporte de Alertas",
+                        f"Reporte generado:\n\n"
+                        f"📊 {result['filename']}\n"
+                        f"📁 Tamaño: {result['size_mb']} MB\n"
+                        f"⚠️ Alertas incluidas: {result.get('total_alertas', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message(
+                        "Error",
+                        "No se pudo generar el reporte de alertas en Excel",
+                        self.frame
+                    )
+            else:
+                # Comportamiento original: PDF
+                if hasattr(self.app, 'update_status'):
+                    self.app.update_status("Generando reporte de alertas PDF...")
                 
-                self.refresh_data()
+                result = reportes_service.generar_reporte_alertas_pdf()
                 
+                if result.get('success'):
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Reporte de alertas PDF generado", "success")
+                    
+                    show_info_message(
+                        "Reporte Generado",
+                        f"Reporte de alertas creado:\n\n"
+                        f"⚠️ {result['filename']}\n"
+                        f"📊 Alertas incluidas: {result.get('total_alertas', 0)}\n"
+                        f"🔴 Críticas: {result.get('alertas_criticas', 0)}\n\n"
+                        f"¿Desea abrir el reporte?",
+                        self.frame
+                    )
+                    
+                    if ask_yes_no("Abrir Reporte", "¿Desea abrir el reporte generado?", self.frame):
+                        self._open_file(result['filepath'])
+                    
+                    self.refresh_data()
+                else:
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Error generando reporte", "danger")
+                    show_error_message(
+                        "Error",
+                        "No se pudo generar el reporte de alertas en PDF",
+                        self.frame
+                    )
+        
         except Exception as e:
-            self.logger.error(f"Error generando reporte alertas: {e}")
+            self.logger.error(f"Error generando reporte de alertas: {e}")
+            if hasattr(self.app, 'update_status'):
+                self.app.update_status("Error generando reporte", "danger")
             show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
     
     def _generate_employees_pdf(self):
@@ -783,56 +837,6 @@ class ReportesTab(LoggerMixin):
             self.logger.error(f"Error abriendo archivo {filepath}: {e}")
             show_error_message("Error", f"Error abriendo archivo: {str(e)}", self.frame)
     
-    def _save_report_as(self):
-        """Guarda una copia del reporte seleccionado"""
-        selection = self.reports_tree.selection()
-        
-        if not selection:
-            show_info_message("Sin Selección", "Por favor seleccione un reporte para guardar", self.frame)
-            return
-        
-        try:
-            # Obtener información del archivo seleccionado
-            selected_item = selection[0]
-            data = self._item_data.get(selected_item, {})
-            filepath = data.get("filepath")
-            filename = self.reports_tree.item(selected_item, "text").split(" ", 1)[1]  # Remover emoji
-            
-            # Obtener extensión
-            file_ext = Path(filepath).suffix
-            
-            # Tipos de archivo para el diálogo
-            if file_ext == '.pdf':
-                file_types = [("Archivos PDF", "*.pdf"), ("Todos los archivos", "*.*")]
-            elif file_ext == '.xlsx':
-                file_types = [("Archivos Excel", "*.xlsx"), ("Todos los archivos", "*.*")]
-            else:
-                file_types = [("Todos los archivos", "*.*")]
-            
-            # Diálogo para guardar
-            destination = select_save_file(
-                "Guardar Reporte Como",
-                filename,
-                file_types,
-                self.frame
-            )
-            
-            if destination:
-                # Copiar archivo
-                import shutil
-                shutil.copy2(filepath, destination)
-                
-                log_user_action("SAVE_REPORT_AS", "copy_report", f"Destino: {Path(destination).name}")
-                
-                show_info_message(
-                    "Reporte Guardado",
-                    f"Reporte guardado exitosamente en:\n{destination}",
-                    self.frame
-                )
-            
-        except Exception as e:
-            self.logger.error(f"Error guardando reporte como: {e}")
-            show_error_message("Error", f"Error guardando archivo: {str(e)}", self.frame)
     
     def _delete_selected_report(self):
         """Elimina el reporte seleccionado"""
@@ -867,32 +871,6 @@ class ReportesTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error eliminando reporte: {e}")
             show_error_message("Error", f"Error eliminando reporte: {str(e)}", self.frame)
-    
-    def _cleanup_old_reports(self):
-        """Limpia reportes antiguos"""
-        log_user_action("CLICK", "cleanup_old_reports", "ReportesTab")
-        
-        if ask_yes_no(
-            "Confirmar Limpieza",
-            "¿Desea eliminar reportes anteriores a 30 días?\n\nEsta acción no se puede deshacer.",
-            self.frame
-        ):
-            try:
-                result = reportes_service.limpiar_reportes_antiguos(30)
-                
-                if result['success']:
-                    show_info_message(
-                        "Limpieza Completada",
-                        f"Se eliminaron {result['deleted_count']} reportes antiguos",
-                        self.frame
-                    )
-                    self.refresh_data()
-                else:
-                    show_error_message("Error", result['message'], self.frame)
-                
-            except Exception as e:
-                self.logger.error(f"Error limpiando reportes: {e}")
-                show_error_message("Error", f"Error limpiando reportes: {str(e)}", self.frame)
     
     def _open_reports_directory(self):
         """Abre el directorio de reportes en el explorador"""

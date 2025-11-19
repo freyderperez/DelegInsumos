@@ -264,6 +264,8 @@ class ReportesService(LoggerMixin):
                 ]))
                 elements.append(cat_table)
                 elements.append(Spacer(1, 15))
+                # Salto de página para evitar que se superponga con el inventario detallado
+                elements.append(PageBreak())
 
             # Inventario Detallado (Top 20)
             elements.append(Paragraph("Inventario Detallado (Top 20)", styles['Heading2']))
@@ -615,6 +617,9 @@ class ReportesService(LoggerMixin):
                 ]))
                 
                 elements.append(ins_table)
+                elements.append(Spacer(1, 20))
+                # Salto de página para separar el resumen del detalle y evitar superposición
+                elements.append(PageBreak())
             
             # Secciones adicionales detalladas del período
             entregas_list = entregas_data.get('entregas', [])
@@ -696,7 +701,9 @@ class ReportesService(LoggerMixin):
                 ]))
                 elements.append(dia_table)
                 elements.append(Spacer(1, 15))
-
+                # Salto de página antes del detalle para evitar que se mezcle con tablas anteriores
+                elements.append(PageBreak())
+ 
                 # Detalle de Entregas (Top 20 recientes)
                 elements.append(Paragraph("Detalle de Entregas (Top 20 recientes)", styles['Heading2']))
                 recientes = sorted(entregas_list, key=lambda e: e.get('fecha_entrega', ''), reverse=True)[:20]
@@ -749,6 +756,138 @@ class ReportesService(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error generando reporte de entregas PDF: {e}")
             raise ReportGenerationException("entregas_pdf", str(e))
+    
+    @service_exception_handler("ReportesService")
+    def generar_reporte_entregas_excel(self, fecha_inicio: Optional[date] = None,
+                                       fecha_fin: Optional[date] = None) -> Dict[str, Any]:
+        """
+        Genera reporte de entregas en Excel para un período.
+        Incluye hoja de resumen y hoja de detalle de entregas.
+        """
+        self.logger.info("Generando reporte de entregas en Excel")
+
+        try:
+            # Rango por defecto (últimos 30 días)
+            if not fecha_inicio:
+                fecha_inicio = date.today() - timedelta(days=30)
+            if not fecha_fin:
+                fecha_fin = date.today()
+
+            # Datos
+            entregas_data = micro_entregas.obtener_entregas_por_rango_fechas(fecha_inicio, fecha_fin)
+            entregas_list = entregas_data.get('entregas', [])
+            estadisticas = entregas_data.get('statistics', {})
+
+            filename = self._get_report_filename("entregas_periodo", "xlsx")
+            filepath = self.output_dir / filename
+
+            wb = openpyxl.Workbook()
+
+            # Hoja 1: Resumen
+            ws_resumen = wb.active
+            ws_resumen.title = "Resumen"
+
+            ws_resumen['A1'] = "Reporte de Entregas - DelegInsumos"
+            ws_resumen['A1'].font = Font(name='Calibri', size=16, bold=True, color='1976D2')
+            ws_resumen.merge_cells('A1:F1')
+
+            ws_resumen['A2'] = f"Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}"
+            ws_resumen['A2'].font = Font(name='Calibri', size=11, color='757575')
+
+            ws_resumen['A3'] = f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            ws_resumen['A3'].font = Font(name='Calibri', size=10, color='757575')
+
+            row = 5
+            ws_resumen[f'A{row}'] = "Estadísticas del período"
+            ws_resumen[f'A{row}'].font = Font(name='Calibri', size=12, bold=True, color='2196F3')
+            row += 1
+
+            stats_rows = [
+                ("Total de entregas:", entregas_data.get('total_entregas', 0)),
+                ("Empleados únicos:", estadisticas.get('empleados_unicos', 0)),
+                ("Insumos únicos:", estadisticas.get('insumos_unicos', 0)),
+            ]
+            for label, value in stats_rows:
+                ws_resumen[f'A{row}'] = label
+                ws_resumen[f'B{row}'] = value
+                ws_resumen[f'A{row}'].font = Font(name='Calibri', size=10)
+                ws_resumen[f'B{row}'].font = Font(name='Calibri', size=10, bold=True)
+                row += 1
+
+            # Autoajustar columnas en resumen
+            max_col = ws_resumen.max_column
+            max_row = ws_resumen.max_row
+            for col_idx in range(1, max_col + 1):
+                max_length = 0
+                col_letter = get_column_letter(col_idx)
+                for row_idx in range(1, max_row + 1):
+                    cell = ws_resumen.cell(row=row_idx, column=col_idx)
+                    if cell.value is not None:
+                        max_length = max(max_length, len(str(cell.value)))
+                ws_resumen.column_dimensions[col_letter].width = min(max_length + 2, 40)
+
+            # Hoja 2: Detalle de entregas
+            ws_detalle = wb.create_sheet("Entregas")
+            headers = ['Código', 'Empleado', 'Departamento', 'Insumo', 'Categoría',
+                       'Cantidad', 'Unidad', 'Fecha']
+            for col, header in enumerate(headers, 1):
+                cell = ws_detalle.cell(row=1, column=col, value=header)
+                cell.font = Font(name='Calibri', size=11, bold=True, color='FFFFFF')
+                cell.fill = PatternFill(start_color='2196F3', end_color='2196F3', fill_type='solid')
+                cell.alignment = Alignment(horizontal='center')
+
+            r = 2
+            for e in entregas_list:
+                try:
+                    f = datetime.fromisoformat(e['fecha_entrega'].replace('Z', '+00:00')).strftime('%d/%m/%Y %H:%M')
+                except Exception:
+                    f = (e.get('fecha_entrega') or '')[:19].replace('T', ' ')
+
+                ws_detalle.cell(row=r, column=1, value=e.get('codigo', ''))
+                ws_detalle.cell(row=r, column=2, value=e.get('empleado_nombre', ''))
+                ws_detalle.cell(row=r, column=3, value=e.get('empleado_departamento', ''))
+                ws_detalle.cell(row=r, column=4, value=e.get('insumo_nombre', ''))
+                ws_detalle.cell(row=r, column=5, value=e.get('insumo_categoria', ''))
+                try:
+                    cantidad_val = float(e.get('cantidad', 0))
+                except Exception:
+                    cantidad_val = 0
+                ws_detalle.cell(row=r, column=6, value=cantidad_val)
+                ws_detalle.cell(row=r, column=7, value=e.get('insumo_unidad', ''))
+                ws_detalle.cell(row=r, column=8, value=f)
+                r += 1
+
+            # Autoajustar columnas en detalle
+            max_col = ws_detalle.max_column
+            max_row = ws_detalle.max_row
+            for col_idx in range(1, max_col + 1):
+                max_length = 0
+                col_letter = get_column_letter(col_idx)
+                for row_idx in range(1, max_row + 1):
+                    cell = ws_detalle.cell(row=row_idx, column=col_idx)
+                    if cell.value is not None:
+                        max_length = max(max_length, len(str(cell.value)))
+                ws_detalle.column_dimensions[col_letter].width = min(max_length + 2, 45)
+
+            wb.save(str(filepath))
+
+            log_operation("REPORTE_ENTREGAS_EXCEL_GENERADO", f"Archivo: {filename}")
+            self.logger.info(f"Reporte de entregas Excel generado: {filepath}")
+
+            return {
+                'success': True,
+                'filename': filename,
+                'filepath': str(filepath),
+                'size_mb': round(filepath.stat().st_size / (1024*1024), 2),
+                'total_entregas': entregas_data.get('total_entregas', 0),
+                'periodo_inicio': fecha_inicio.isoformat(),
+                'periodo_fin': fecha_fin.isoformat(),
+                'message': 'Reporte de entregas generado exitosamente en Excel'
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error generando reporte de entregas Excel: {e}")
+            raise ReportGenerationException("entregas_excel", str(e))
     
     @service_exception_handler("ReportesService")
     def generar_reporte_alertas_pdf(self) -> Dict[str, Any]:
@@ -881,7 +1020,9 @@ class ReportesService(LoggerMixin):
             ]))
             elements.append(sev_table)
             elements.append(Spacer(1, 15))
-
+            # Salto de página para que el listado largo no se superponga con el resumen
+            elements.append(PageBreak())
+ 
             # Listado de Alertas Activas
             if alertas_activas:
                 elements.append(Paragraph("Listado de Alertas Activas", styles['Heading2']))
@@ -907,7 +1048,7 @@ class ReportesService(LoggerMixin):
                 ]))
                 elements.append(list_table)
                 elements.append(Spacer(1, 15))
-
+ 
             # Generar PDF
             def add_page_elements(canvas, doc):
                 self._create_pdf_header(canvas, doc)
@@ -931,6 +1072,14 @@ class ReportesService(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error generando reporte de alertas PDF: {e}")
             raise ReportGenerationException("alertas_pdf", str(e))
+    
+    @service_exception_handler("ReportesService")
+    def generar_reporte_alertas_excel(self) -> Dict[str, Any]:
+        """
+        Genera reporte de alertas del sistema en Excel (método de instancia).
+        Reutiliza la implementación compartida.
+        """
+        return _generar_reporte_alertas_excel_impl(self)
     
     @service_exception_handler("ReportesService")
     def generar_reporte_empleados_pdf(self) -> Dict[str, Any]:
@@ -1325,6 +1474,167 @@ class ReportesService(LoggerMixin):
 # Instancia global del servicio de reportes
 reportes_service = ReportesService()
 
+
+@service_exception_handler("ReportesService")
+def _generar_reporte_alertas_excel_impl(self) -> Dict[str, Any]:
+    """
+    Genera reporte de alertas del sistema en Excel.
+    Incluye resumen general y listado de alertas activas.
+    """
+    self.logger.info("Generando reporte de alertas en Excel")
+
+    try:
+        # Datos de alertas
+        alertas_activas = micro_alertas.obtener_alertas_activas()
+        resumen_alertas = micro_alertas.obtener_resumen_alertas()
+
+        # Archivo de salida
+        filename = self._get_report_filename("alertas_sistema", "xlsx")
+        filepath = self.output_dir / filename
+
+        wb = openpyxl.Workbook()
+
+        # Hoja 1: Resumen
+        ws_resumen = wb.active
+        ws_resumen.title = "Resumen"
+
+        # Título
+        ws_resumen["A1"] = "Reporte de Alertas del Sistema - DelegInsumos"
+        ws_resumen["A1"].font = Font(name="Calibri", size=16, bold=True, color="F44336")
+        ws_resumen.merge_cells("A1:F1")
+
+        # Fecha
+        ws_resumen["A2"] = f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        ws_resumen["A2"].font = Font(name="Calibri", size=10, color="757575")
+
+        row = 4
+        ws_resumen[f"A{row}"] = "Estadísticas Generales"
+        ws_resumen[f"A{row}"].font = Font(name="Calibri", size=12, bold=True, color="2196F3")
+        row += 1
+
+        stats_rows = [
+            ("Total alertas activas:", resumen_alertas.get("total_active", 0)),
+            ("Alertas críticas:", resumen_alertas.get("by_severity", {}).get("CRITICAL", 0)),
+            ("Alertas de alta prioridad:", resumen_alertas.get("by_severity", {}).get("HIGH", 0)),
+            ("Alertas que requieren acción:", resumen_alertas.get("action_required", 0)),
+        ]
+        for label, value in stats_rows:
+            ws_resumen[f"A{row}"] = label
+            ws_resumen[f"B{row}"] = value
+            ws_resumen[f"A{row}"].font = Font(name="Calibri", size=10)
+            ws_resumen[f"B{row}"].font = Font(name="Calibri", size=10, bold=True)
+            row += 1
+
+        # Resumen por tipo
+        row += 1
+        ws_resumen[f"A{row}"] = "Por tipo de alerta"
+        ws_resumen[f"A{row}"].font = Font(name="Calibri", size=12, bold=True, color="2196F3")
+        row += 1
+
+        ws_resumen[f"A{row}"] = "Tipo"
+        ws_resumen[f"B{row}"] = "Cantidad"
+        for col in ("A", "B"):
+            cell = ws_resumen[f"{col}{row}"]
+            cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="FF9800", end_color="FF9800", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+
+        by_type = resumen_alertas.get("by_type", {})
+        for tipo, cantidad in by_type.items():
+            if cantidad <= 0:
+                continue
+            row += 1
+            ws_resumen[f"A{row}"] = tipo.replace("_", " ").title()
+            ws_resumen[f"B{row}"] = cantidad
+
+        # Resumen por severidad
+        row += 2
+        ws_resumen[f"A{row}"] = "Por severidad"
+        ws_resumen[f"A{row}"].font = Font(name="Calibri", size=12, bold=True, color="2196F3")
+        row += 1
+
+        ws_resumen[f"A{row}"] = "Severidad"
+        ws_resumen[f"B{row}"] = "Cantidad"
+        for col in ("A", "B"):
+            cell = ws_resumen[f"{col}{row}"]
+            cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="F44336", end_color="F44336", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+
+        by_sev = resumen_alertas.get("by_severity", {})
+        for sev_key in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
+            row += 1
+            ws_resumen[f"A{row}"] = sev_key.title()
+            ws_resumen[f"B{row}"] = by_sev.get(sev_key, 0)
+
+        # Autoajustar columnas en hoja de resumen
+        max_col = ws_resumen.max_column
+        max_row = ws_resumen.max_row
+        for col_idx in range(1, max_col + 1):
+            max_length = 0
+            col_letter = get_column_letter(col_idx)
+            for row_idx in range(1, max_row + 1):
+                cell = ws_resumen.cell(row=row_idx, column=col_idx)
+                if cell.value is not None:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws_resumen.column_dimensions[col_letter].width = min(max_length + 2, 40)
+
+        # Hoja 2: Alertas activas
+        ws_list = wb.create_sheet("Alertas Activas")
+        headers = ["Tipo", "Severidad", "Título", "Mensaje", "Fecha", "Acción requerida"]
+        for col_idx, header in enumerate(headers, 1):
+            cell = ws_list.cell(row=1, column=col_idx, value=header)
+            cell.font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+            cell.fill = PatternFill(start_color="1976D2", end_color="1976D2", fill_type="solid")
+            cell.alignment = Alignment(horizontal="center")
+
+        r = 2
+        for a in alertas_activas:
+            try:
+                f = datetime.fromisoformat(a["created_at"].replace("Z", "+00:00")).strftime("%d/%m/%Y %H:%M")
+            except Exception:
+                f = (a.get("created_at") or "")[:19].replace("T", " ")
+
+            ws_list.cell(row=r, column=1, value=a.get("alert_type", "").replace("_", " ").title())
+            ws_list.cell(row=r, column=2, value=a.get("severity", "").title())
+            ws_list.cell(row=r, column=3, value=(a.get("title", "") or "")[:80])
+            ws_list.cell(row=r, column=4, value=(a.get("message", "") or "")[:200])
+            ws_list.cell(row=r, column=5, value=f)
+            ws_list.cell(row=r, column=6, value="Sí" if a.get("action_required") else "No")
+            r += 1
+
+        # Autoajustar columnas en hoja de listado
+        max_col = ws_list.max_column
+        max_row = ws_list.max_row
+        for col_idx in range(1, max_col + 1):
+            max_length = 0
+            col_letter = get_column_letter(col_idx)
+            for row_idx in range(1, max_row + 1):
+                cell = ws_list.cell(row=row_idx, column=col_idx)
+                if cell.value is not None:
+                    max_length = max(max_length, len(str(cell.value)))
+            ws_list.column_dimensions[col_letter].width = min(max_length + 2, 60)
+
+        # Guardar archivo
+        wb.save(str(filepath))
+
+        log_operation("REPORTE_ALERTAS_EXCEL_GENERADO", f"Archivo: {filename}")
+        self.logger.info(f"Reporte de alertas Excel generado: {filepath}")
+
+        return {
+            "success": True,
+            "filename": filename,
+            "filepath": str(filepath),
+            "size_mb": round(filepath.stat().st_size / (1024 * 1024), 2),
+            "total_alertas": len(alertas_activas),
+            "message": "Reporte de alertas generado exitosamente en Excel",
+        }
+
+    except Exception as e:
+        self.logger.error(f"Error generando reporte de alertas Excel: {e}")
+        raise ReportGenerationException("alertas_excel", str(e))
+
+
 # Funciones de conveniencia para uso directo
 def generar_reporte_inventario_pdf(incluir_graficos: bool = True) -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de inventario PDF"""
@@ -1339,9 +1649,18 @@ def generar_reporte_entregas_pdf(fecha_inicio: Optional[date] = None,
     """Función de conveniencia para generar reporte de entregas PDF"""
     return reportes_service.generar_reporte_entregas_pdf(fecha_inicio, fecha_fin)
 
+def generar_reporte_entregas_excel(fecha_inicio: Optional[date] = None,
+                                 fecha_fin: Optional[date] = None) -> Dict[str, Any]:
+    """Función de conveniencia para generar reporte de entregas Excel"""
+    return reportes_service.generar_reporte_entregas_excel(fecha_inicio, fecha_fin)
+
 def generar_reporte_alertas_pdf() -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de alertas PDF"""
     return reportes_service.generar_reporte_alertas_pdf()
+
+def generar_reporte_alertas_excel() -> Dict[str, Any]:
+    """Función de conveniencia para generar reporte de alertas Excel"""
+    return _generar_reporte_alertas_excel_impl(reportes_service)
 
 def generar_reporte_empleados_pdf() -> Dict[str, Any]:
     """Función de conveniencia para generar reporte de empleados PDF"""
