@@ -588,27 +588,42 @@ class EmpleadoRepository(BaseRepository):
     def delete(self, empleado_id: int, soft_delete: bool = True) -> bool:
         """
         Elimina un empleado (soft o hard delete).
-        
+
         Args:
             empleado_id: ID del empleado
             soft_delete: Si usar eliminación suave
-            
+
         Returns:
             True si la eliminación fue exitosa
+
+        Raises:
+            DatabaseException: Si hay entregas asociadas al empleado (hard delete)
         """
         try:
             if soft_delete:
                 return self.update(empleado_id, {'activo': False})
             else:
+                # Verificar si el empleado tiene entregas asociadas
+                check_sql = "SELECT COUNT(*) FROM entregas WHERE empleado_id = ?"
+                count_rows = db_connection.execute_query(check_sql, (empleado_id,))
+                entregas_count = count_rows[0][0] if count_rows else 0
+
+                if entregas_count > 0:
+                    raise DatabaseException(
+                        f"No se puede eliminar el empleado porque tiene {entregas_count} entrega(s) asociada(s). "
+                        "Use eliminación suave (desactivar) en su lugar."
+                    )
+
+                # Si no tiene entregas, proceder con eliminación física
                 sql = "DELETE FROM empleados WHERE id = ?"
                 rows_affected = db_connection.execute_command(sql, (empleado_id,))
-                
+
                 if rows_affected > 0:
                     self.logger.info(f"Empleado {empleado_id} eliminado físicamente")
                     return True
-                
+
                 return False
-                
+
         except Exception as e:
             self.logger.error(f"Error eliminando empleado {empleado_id}: {e}")
             raise DatabaseException(f"Error eliminando empleado: {e}")

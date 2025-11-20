@@ -803,8 +803,7 @@ def test_backup_system():
         estado = backup_service.obtener_estado_backup()
         
         print(f"  🔄 Backup automático activo: {estado['backup_automatico_activo']}")
-        print(f"  ⏰ Intervalo: {estado['interv
-alo_horas'] horas"
+        print(f"  ⏰ Intervalo: {estado['intervalo_horas']} horas")
         
         return True
         

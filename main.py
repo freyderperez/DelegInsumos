@@ -90,30 +90,35 @@ class DelegInsumosApp:
     
     def _create_main_window(self):
         """Crea y configura la ventana principal"""
-        
+
         # Crear ventana principal con ttkbootstrap
         tema = self.ui_config.get('tema', 'cosmo')
         self.root = ttk.Window(themename=tema)
-        
+
         # Configurar ventana
         self.root.title(f"{self.system_info['nombre']} v{self.system_info['version']}")
         self.root.iconify()  # Minimizar temporalmente durante carga
-        
-        # Dimensiones de la ventana
+
+        # Dimensiones de la ventana (con valores por defecto más conservadores)
         width = self.ui_config.get('ventana_ancho', 1200)
         height = self.ui_config.get('ventana_altura', 800)
-        
-        # Centrar ventana en la pantalla
-        center_window(self.root, width, height)
-        
-        # Configurar redimensionamiento
+
+        # Centrar ventana en la pantalla con ajuste automático para diferentes tamaños
         resizable = self.ui_config.get('ventana_redimensionable', True)
+        center_window(self.root, width, height, allow_resize=resizable)
+
+        # Configurar comportamiento de redimensionamiento
         self.root.resizable(resizable, resizable)
-        
-        # Configurar estado mínimo
+
+        # Configurar estado inicial
         self.root.state('normal')
-        
-        main_logger.info(f"Ventana principal creada: {width}x{height}")
+
+        # Configurar tamaño mínimo desde configuración
+        min_width = self.ui_config.get('ventana_ancho_minimo', 1000)
+        min_height = self.ui_config.get('ventana_altura_minima', 700)
+        self.root.minsize(min_width, min_height)
+
+        main_logger.info(f"Ventana principal creada: {width}x{height} (responsive)")
     
     def _create_interface(self):
         """Crea la interfaz principal con tabs"""

@@ -14,9 +14,11 @@
   },
   "interfaz": {
     "tema": "cosmo",
-    "ventana_ancho": 1200,
-    "ventana_altura": 800,
+    "ventana_ancho": 1100,
+    "ventana_altura": 750,
     "ventana_redimensionable": true,
+    "ventana_ancho_minimo": 900,
+    "ventana_altura_minima": 650,
     "colores": {
       "primario": "#2196F3",
       "secundario": "#FFF",

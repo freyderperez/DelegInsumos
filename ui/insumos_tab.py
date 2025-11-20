@@ -36,7 +36,7 @@ class InsumosTab(LoggerMixin):
         self.app = app_instance
         
         # Crear frame principal
-        self.frame = ttk.Frame(parent, padding="15")
+        self.frame = ttk.Frame(parent, padding="10")
         
         # Variables de datos
         self.insumos_list = []
@@ -120,7 +120,7 @@ class InsumosTab(LoggerMixin):
         list_frame = ttk.Labelframe(
             parent,
             text="📋 Lista de Insumos",
-            padding="15"
+            padding="10"
         )
         parent.add(list_frame, weight=2)
         
@@ -160,13 +160,12 @@ class InsumosTab(LoggerMixin):
             textvariable=self.filter_categoria,
             values=["Todas"] + CATEGORIAS_INSUMOS,
             state="readonly",
-            width=12,
             bootstyle="primary"
         )
         categoria_combo.pack(side=LEFT, padx=(5, 10))
         categoria_combo.bind("<<ComboboxSelected>>", self._on_filter_changed)
         categoria_combo.current(0)
-        
+
         # Filtro por estado de stock
         ttk.Label(filters_subframe, text="Estado:").pack(side=LEFT)
         status_combo = ttk.Combobox(
@@ -174,20 +173,18 @@ class InsumosTab(LoggerMixin):
             textvariable=self.filter_stock_status,
             values=["Todos", "Crítico", "Bajo", "Normal", "Exceso"],
             state="readonly",
-            width=10,
             bootstyle="primary"
         )
         status_combo.pack(side=LEFT, padx=(5, 10))
         status_combo.bind("<<ComboboxSelected>>", self._on_filter_changed)
         status_combo.current(0)
-        
+
         # Botón limpiar filtros
         ttk.Button(
             filters_subframe,
             text="🧹 Limpiar",
             command=self._clear_filters,
-            bootstyle="outline-secondary",
-            width=10
+            bootstyle="outline-secondary"
         ).pack(side=RIGHT)
         
         # Treeview para lista de insumos
@@ -207,12 +204,12 @@ class InsumosTab(LoggerMixin):
         self.insumos_tree.column("#0", width=200, stretch=True)
 
         column_configs = [
-            ("Código", 120, False),
-            ("Categoría", 100, False),
-            ("Stock", 80, False),
-            ("Mínimo", 70, False),
-            ("Estado", 80, False),
-            ("Proveedor", 120, True)
+            ("Código", 100, False),
+            ("Categoría", 90, False),
+            ("Stock", 70, False),
+            ("Mínimo", 65, False),
+            ("Estado", 75, False),
+            ("Proveedor", 110, True)
         ]
 
         for col, (title, width, stretch) in zip(columns, column_configs):
@@ -264,7 +261,7 @@ class InsumosTab(LoggerMixin):
         form_frame = ttk.Labelframe(
             parent,
             text="📝 Formulario de Insumo",
-            padding="15"
+            padding="10"
         )
         parent.add(form_frame, weight=1)
         
@@ -285,17 +282,15 @@ class InsumosTab(LoggerMixin):
             mode_frame,
             text="🗑️ Limpiar",
             command=self._clear_form,
-            bootstyle="outline-secondary",
-            width=10
+            bootstyle="outline-secondary"
         )
         self.form_clear_btn.pack(side=RIGHT, padx=(5, 0))
-        
+
         self.form_cancel_btn = ttk.Button(
             mode_frame,
             text="❌ Cancelar",
             command=self._cancel_form,
-            bootstyle="outline-danger",
-            width=10
+            bootstyle="outline-danger"
         )
         self.form_cancel_btn.pack(side=RIGHT)
         
@@ -309,7 +304,7 @@ class InsumosTab(LoggerMixin):
         """Crea los campos del formulario"""
         
         fields_frame = ttk.Frame(parent)
-        fields_frame.pack(fill=BOTH, expand=True, pady=(0, 15))
+        fields_frame.pack(fill=BOTH, expand=True, pady=(0, 10))
         
         # Código público (solo lectura)
         ttk.Label(fields_frame, text="Código:").grid(row=0, column=0, sticky="w", pady=2)
@@ -350,11 +345,10 @@ class InsumosTab(LoggerMixin):
             from_=0,
             to=99999,
             textvariable=self.form_cantidad_actual,
-            bootstyle="success",
-            width=10
+            bootstyle="success"
         )
         self.form_cantidad_spinbox.pack(side=LEFT)
-        
+
         # Unidad de medida
         ttk.Label(cantidad_frame, text="Unidad:").pack(side=LEFT, padx=(10, 5))
         self.form_unidad_combo = ttk.Combobox(
@@ -362,7 +356,6 @@ class InsumosTab(LoggerMixin):
             textvariable=self.form_unidad_medida,
             values=UNIDADES_MEDIDA,
             state="readonly",
-            width=12,
             bootstyle="primary"
         )
         self.form_unidad_combo.pack(side=LEFT)
@@ -382,18 +375,16 @@ class InsumosTab(LoggerMixin):
             from_=0,
             to=9999,
             textvariable=self.form_cantidad_minima,
-            bootstyle="warning",
-            width=8
+            bootstyle="warning"
         ).pack(side=LEFT, padx=(5, 15))
-        
+
         ttk.Label(limits_controls, text="Máximo:").pack(side=LEFT)
         ttk.Spinbox(
             limits_controls,
             from_=1,
             to=99999,
             textvariable=self.form_cantidad_maxima,
-            bootstyle="info",
-            width=8
+            bootstyle="info"
         ).pack(side=LEFT, padx=(5, 0))
         
         # Proveedor
@@ -420,35 +411,32 @@ class InsumosTab(LoggerMixin):
         """Crea los botones de acción del formulario"""
         
         actions_frame = ttk.Frame(parent)
-        actions_frame.pack(fill=X, pady=(15, 0))
+        actions_frame.pack(fill=X, pady=(10, 0))
         
         # Botón guardar
         self.save_btn = ttk.Button(
             actions_frame,
             text="💾 Guardar",
             command=self._save_insumo,
-            bootstyle="success",
-            width=15
+            bootstyle="success"
         )
         self.save_btn.pack(side=LEFT, padx=(0, 5))
-        
+
         # Botón actualizar stock
         self.update_stock_btn = ttk.Button(
             actions_frame,
             text="📊 Actualizar Stock",
             command=self._show_stock_update_dialog,
-            bootstyle="info",
-            width=15
+            bootstyle="info"
         )
         self.update_stock_btn.pack(side=LEFT, padx=(0, 5))
-        
+
         # Botón eliminar
         self.delete_btn = ttk.Button(
             actions_frame,
             text="🗑️ Eliminar",
             command=self._delete_insumo,
-            bootstyle="danger-outline",
-            width=15
+            bootstyle="danger-outline"
         )
         self.delete_btn.pack(side=LEFT, padx=(0, 5))
         

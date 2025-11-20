@@ -1,5 +1,5 @@
 
-# 📦 DelegInsumos v1.0.0
+# 📦 DelegInsumos
 
 **Sistema de Gestión de Insumos de Oficina - 100% Offline**
 

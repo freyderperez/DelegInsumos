@@ -239,45 +239,46 @@ class MicroEmpleadosService(LoggerMixin):
             'message': f"Empleado actualizado exitosamente"
         }
     
+    
     @service_exception_handler("MicroEmpleadosService")
-    def eliminar_empleado(self, empleado_id: int, soft_delete: bool = True) -> Dict[str, Any]:
+    def eliminar_empleado(self, empleado_id: int, soft_delete: bool = False) -> Dict[str, Any]:
         """
         Elimina un empleado del sistema.
-        
+
         Args:
             empleado_id: ID del empleado
-            soft_delete: Si usar eliminación suave
-            
+            soft_delete: Si usar eliminación suave (por defecto False - eliminación permanente)
+
         Returns:
             Diccionario con resultado de la eliminación
-            
+
         Raises:
             RecordNotFoundException: Si el empleado no existe
         """
         self.logger.info(f"Eliminando empleado ID: {empleado_id} (soft: {soft_delete})")
-        
+
         # Verificar que existe
         existing_data = self._repository.get_by_id(empleado_id)
         if not existing_data:
             raise RecordNotFoundException("empleado", str(empleado_id))
-        
+
         empleado_nombre = existing_data.get('nombre_completo', 'N/A')
-        
+
         # Eliminar
         success = self._repository.delete(empleado_id, soft_delete=soft_delete)
-        
+
         if not success:
             raise BusinessLogicException("No se pudo eliminar el empleado")
-        
+
         delete_type = "eliminado" if not soft_delete else "desactivado"
         log_operation("EMPLEADO_ELIMINADO", f"ID: {empleado_id}, Tipo: {delete_type}")
         self.logger.info(f"Empleado {empleado_id} {delete_type} exitosamente")
-        
+
         return {
             'success': True,
             'message': f"Empleado '{empleado_nombre}' {delete_type} exitosamente"
         }
-    
+
     @service_exception_handler("MicroEmpleadosService")
     def buscar_empleados(self, termino: str, active_only: bool = True) -> List[Dict[str, Any]]:
         """

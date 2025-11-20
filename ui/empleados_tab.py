@@ -37,7 +37,7 @@ class EmpleadosTab(LoggerMixin):
         self.app = app_instance
         
         # Crear frame principal
-        self.frame = ttk.Frame(parent, padding="15")
+        self.frame = ttk.Frame(parent, padding="10")
         
         # Variables de datos
         self.empleados_list = []
@@ -125,7 +125,7 @@ class EmpleadosTab(LoggerMixin):
         list_frame = ttk.Labelframe(
             parent,
             text="📋 Lista de Empleados",
-            padding="15"
+            padding="10"
         )
         parent.add(list_frame, weight=2)
         
@@ -165,13 +165,12 @@ class EmpleadosTab(LoggerMixin):
             textvariable=self.filter_departamento,
             values=["Todos"] + DEPARTAMENTOS,
             state="readonly",
-            width=15,
             bootstyle="primary"
         )
         departamento_combo.pack(side=LEFT, padx=(5, 10))
         departamento_combo.bind("<<ComboboxSelected>>", self._on_filter_changed)
         departamento_combo.current(0)
-        
+
         # Filtro por estado
         ttk.Label(filters_subframe, text="Estado:").pack(side=LEFT)
         status_combo = ttk.Combobox(
@@ -179,20 +178,18 @@ class EmpleadosTab(LoggerMixin):
             textvariable=self.filter_status,
             values=["Todos", "Activos", "Inactivos"],
             state="readonly",
-            width=10,
             bootstyle="primary"
         )
         status_combo.pack(side=LEFT, padx=(5, 10))
         status_combo.bind("<<ComboboxSelected>>", self._on_filter_changed)
         status_combo.current(0)
-        
+
         # Botón limpiar filtros
         ttk.Button(
             filters_subframe,
             text="🧹 Limpiar",
             command=self._clear_filters,
-            bootstyle="outline-secondary",
-            width=10
+            bootstyle="outline-secondary"
         ).pack(side=RIGHT)
         
         # Treeview para lista de empleados
@@ -212,12 +209,12 @@ class EmpleadosTab(LoggerMixin):
         self.empleados_tree.column("#0", width=200, stretch=True)
         
         column_configs = [
-            ("Código", 120, False),
-            ("Cédula", 100, False),
-            ("Cargo", 120, True),
+            ("Código", 80, False),
+            ("Cédula", 90, False),
+            ("Cargo", 100, True),
             ("Departamento", 120, True),
-            ("Email", 150, True),
-            ("Teléfono", 100, False)
+            ("Email", 140, True),
+            ("Teléfono", 90, False)
         ]
         
         for col, (title, width, stretch) in zip(columns, column_configs):
@@ -267,7 +264,7 @@ class EmpleadosTab(LoggerMixin):
         form_frame = ttk.Labelframe(
             parent,
             text="📝 Formulario de Empleado",
-            padding="15"
+            padding="10"
         )
         parent.add(form_frame, weight=1)
         
@@ -288,17 +285,15 @@ class EmpleadosTab(LoggerMixin):
             mode_frame,
             text="🗑️ Limpiar",
             command=self._clear_form,
-            bootstyle="outline-secondary",
-            width=12
+            bootstyle="outline-secondary"
         )
         self.form_clear_btn.pack(side=RIGHT, padx=(5, 0))
-        
+
         self.form_cancel_btn = ttk.Button(
             mode_frame,
             text="❌ Cancelar",
             command=self._cancel_form,
-            bootstyle="outline-danger",
-            width=12
+            bootstyle="outline-danger"
         )
         self.form_cancel_btn.pack(side=RIGHT)
         
@@ -312,7 +307,7 @@ class EmpleadosTab(LoggerMixin):
         """Crea los campos del formulario de empleado"""
         
         fields_frame = ttk.Frame(parent)
-        fields_frame.pack(fill=BOTH, expand=True, pady=(0, 15))
+        fields_frame.pack(fill=BOTH, expand=True, pady=(0, 10))
         
         # Código (solo lectura)
         ttk.Label(fields_frame, text="Código:").grid(row=0, column=0, sticky="w", pady=2)
@@ -434,35 +429,32 @@ class EmpleadosTab(LoggerMixin):
         """Crea los botones de acción del formulario"""
         
         actions_frame = ttk.Frame(parent)
-        actions_frame.pack(fill=X, pady=(15, 0))
+        actions_frame.pack(fill=X, pady=(10, 0))
         
         # Botón guardar
         self.save_btn = ttk.Button(
             actions_frame,
             text="💾 Guardar",
             command=self._save_empleado,
-            bootstyle="success",
-            width=15
+            bootstyle="success"
         )
         self.save_btn.pack(side=LEFT, padx=(0, 5))
-        
+
         # Botón ver entregas
         self.view_deliveries_btn = ttk.Button(
             actions_frame,
             text="📋 Ver Entregas",
             command=self._view_employee_deliveries,
-            bootstyle="info",
-            width=15
+            bootstyle="info"
         )
         self.view_deliveries_btn.pack(side=LEFT, padx=(0, 5))
-        
+
         # Botón eliminar
         self.delete_btn = ttk.Button(
             actions_frame,
             text="🗑️ Eliminar",
             command=self._delete_empleado,
-            bootstyle="danger-outline",
-            width=15
+            bootstyle="danger-outline"
         )
         self.delete_btn.pack(side=LEFT, padx=(0, 5))
         
@@ -671,6 +663,7 @@ class EmpleadosTab(LoggerMixin):
             # Ocultar botones de edición
             self.view_deliveries_btn.pack_forget()
             self.delete_btn.pack_forget()
+            self.delete_btn.pack_forget()
             
             # Cambiar a modo agregar
             self.form_mode_label.config(text="Nuevo Empleado", bootstyle="success")
@@ -807,7 +800,6 @@ class EmpleadosTab(LoggerMixin):
         
         # Ocultar botones de edición
         self.view_deliveries_btn.pack_forget()
-        self.delete_btn.pack_forget()
         
         # Cambiar modo
         self.form_mode_label.config(text="Nuevo Empleado", bootstyle="success")
@@ -912,51 +904,52 @@ class EmpleadosTab(LoggerMixin):
         if self.selected_empleado:
             self.form_nombre_entry.focus_set()
     
+    def _delete_empleado(self):
+        """Elimina el empleado seleccionado"""
+        if not self.selected_empleado:
+            return
+
+        try:
+            empleado_nombre = self.form_nombre_completo.get()
+
+            # Confirmar eliminación
+            if ask_yes_no(
+                "Confirmar Eliminación",
+                f"¿Está seguro que desea eliminar el empleado?\n\n{empleado_nombre}\n\n"
+                f"El empleado será eliminado permanentemente del sistema.",
+                self.frame
+            ):
+                empleado_id = int(self.form_id.get())
+                result = micro_empleados.eliminar_empleado(empleado_id, soft_delete=False)
+
+                if result['success']:
+                    show_info_message("Empleado Eliminado", result['message'], self.frame)
+
+                    # Actualizar lista y limpiar formulario
+                    self.refresh_data()
+                    self._clear_form()
+
+                    log_user_action("DELETE_EMPLEADO", "empleado_deleted", f"ID: {empleado_id}")
+
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Empleado eliminado", "success")
+                else:
+                    show_error_message("Error", "No se pudo eliminar el empleado", self.frame)
+
+        except Exception as e:
+            self.logger.error(f"Error eliminando empleado: {e}")
+            show_error_message("Error", f"Error eliminando empleado: {str(e)}", self.frame)
+
     def _view_employee_deliveries(self):
         """Muestra las entregas del empleado seleccionado"""
         if not self.selected_empleado:
             return
-        
+
         log_user_action("CLICK", "view_employee_deliveries", "EmpleadosTab")
-        
+
         # Cambiar al tab de entregas con filtro del empleado
         if hasattr(self.app, 'entregas_tab'):
             self.app.notebook.select(3)  # Tab de entregas
             empleado_id = int(self.form_id.get())
             self.app.entregas_tab.filter_by_employee(empleado_id, self.form_nombre_completo.get())
     
-    def _delete_empleado(self):
-        """Elimina el empleado seleccionado"""
-        if not self.selected_empleado:
-            return
-        
-        try:
-            empleado_nombre = self.form_nombre_completo.get()
-            
-            # Confirmar eliminación
-            if ask_yes_no(
-                "Confirmar Eliminación",
-                f"¿Está seguro que desea eliminar el empleado?\n\n{empleado_nombre}\n\n"
-                f"El empleado será marcado como inactivo pero se mantendrá en el historial.",
-                self.frame
-            ):
-                empleado_id = int(self.form_id.get())
-                result = micro_empleados.eliminar_empleado(empleado_id, soft_delete=True)
-                
-                if result['success']:
-                    show_info_message("Empleado Eliminado", result['message'], self.frame)
-                    
-                    # Actualizar lista y limpiar formulario
-                    self.refresh_data()
-                    self._clear_form()
-                    
-                    log_user_action("DELETE_EMPLEADO", "empleado_deleted", f"ID: {empleado_id}")
-                    
-                    if hasattr(self.app, 'update_status'):
-                        self.app.update_status("Empleado eliminado", "success")
-                else:
-                    show_error_message("Error", "No se pudo eliminar el empleado", self.frame)
-            
-        except Exception as e:
-            self.logger.error(f"Error eliminando empleado: {e}")
-            show_error_message("Error", f"Error eliminando empleado: {str(e)}", self.frame)

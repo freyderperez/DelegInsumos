@@ -258,24 +258,53 @@ def select_open_file(title: str, file_types: List[tuple] = None,
     )
 
 
-def center_window(window: tk.Toplevel, width: int, height: int):
+def center_window(window: tk.Toplevel, width: int, height: int, allow_resize: bool = True):
     """
-    Centra una ventana en la pantalla.
-    
+    Centra una ventana en la pantalla y la hace responsive.
+
     Args:
         window: Ventana a centrar
-        width: Ancho de la ventana
-        height: Alto de la ventana
+        width: Ancho deseado de la ventana
+        height: Alto deseado de la ventana
+        allow_resize: Si permitir redimensionamiento automático
     """
     # Obtener dimensiones de la pantalla
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
-    
+
+    # Ajustar dimensiones si son demasiado grandes para la pantalla
+    # Dejar un margen del 10% en cada lado
+    max_width = int(screen_width * 0.9)
+    max_height = int(screen_height * 0.9)
+
+    # Si las dimensiones solicitadas son mayores que el máximo permitido
+    if width > max_width or height > max_height:
+        # Calcular nuevas dimensiones manteniendo proporción
+        width_ratio = max_width / width
+        height_ratio = max_height / height
+        scale_ratio = min(width_ratio, height_ratio)
+
+        width = int(width * scale_ratio)
+        height = int(height * scale_ratio)
+
+        # Asegurar dimensiones mínimas
+        width = max(width, 800)   # Mínimo 800px de ancho
+        height = max(height, 600) # Mínimo 600px de alto
+
     # Calcular posición centrada
     x = (screen_width - width) // 2
     y = (screen_height - height) // 2
-    
+
+    # Establecer geometría
     window.geometry(f"{width}x{height}+{x}+{y}")
+
+    # Configurar comportamiento de redimensionamiento
+    if allow_resize:
+        # Permitir maximizar y restaurar
+        window.state('normal')  # Asegurar que no esté maximizada inicialmente
+
+        # Hacer la ventana redimensionable
+        window.resizable(True, True)
 
 
 def truncate_text(text: str, max_length: int = 50, suffix: str = "...") -> str:
