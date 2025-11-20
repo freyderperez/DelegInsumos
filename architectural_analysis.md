@@ -76,7 +76,6 @@ CREATE TABLE insumos (
     cantidad_minima INTEGER DEFAULT 5,
     cantidad_maxima INTEGER DEFAULT 100,
     unidad_medida VARCHAR(20) DEFAULT 'unidad',
-    precio_unitario DECIMAL(10,2) DEFAULT 0.00,
     proveedor VARCHAR(100),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -141,7 +140,7 @@ SQLite Database File
 ### Alertas Automáticas:
 1. **Stock Bajo**: cantidad_actual < cantidad_minima
 2. **Stock Crítico**: cantidad_actual ≤ 0
-3. **Sobrecarga**: cantidad_actual > cantidad_maxima
+3. **Stock Exceso**: cantidad_actual > cantidad_maxima
 4. **Entregas Frecuentes**: > X entregas del mismo insumo/día
 
 ### Reportes Generados:

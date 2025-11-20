@@ -155,39 +155,64 @@ class Empleado:
     
     def get_employment_duration(self) -> Optional[Dict[str, int]]:
         """
-        Calcula el tiempo de servicio del empleado.
-
+        Calcula el tiempo desde que el empleado fue registrado en el sistema.
+ 
+        Se utiliza el campo fecha_creacion como referencia, ya que no existe
+        fecha de ingreso laboral explícita.
+ 
         Returns:
-            None ya que se eliminó el campo fecha_ingreso
+            Diccionario con años, meses y días de antigüedad en el sistema,
+            o None si no hay fecha_creacion disponible.
         """
-        return None
-    
+        if not self.fecha_creacion:
+            return None
+ 
+        start_date = self.fecha_creacion.date()
+        today = date.today()
+ 
+        # Proteger contra fechas futuras por errores de datos
+        if start_date > today:
+            start_date = today
+ 
+        delta_days = (today - start_date).days
+        years = delta_days // 365
+        remaining_days = delta_days % 365
+        months = remaining_days // 30
+        days = remaining_days % 30
+ 
+        return {
+            'años': years,
+            'meses': months,
+            'días': days
+        }
+     
     def is_new_employee(self, threshold_months: int = 6) -> bool:
         """
-        Determina si es un empleado nuevo.
+        Determina si es un empleado relativamente nuevo en el sistema.
         
         Args:
-            threshold_months: Meses para considerar como nuevo empleado
+            threshold_months: Meses desde su registro para considerarlo nuevo
             
         Returns:
-            True si es un empleado nuevo
+            True si el tiempo desde su registro es menor al umbral
         """
         duration = self.get_employment_duration()
         if not duration:
-            return True
+            # Sin fecha de creación no se puede afirmar que sea "nuevo"
+            return False
         
         total_months = duration['años'] * 12 + duration['meses']
         return total_months < threshold_months
-    
+     
     def is_long_term_employee(self, threshold_years: int = 5) -> bool:
         """
-        Determina si es un empleado de larga trayectoria.
+        Determina si es un empleado de larga trayectoria en el sistema.
         
         Args:
-            threshold_years: Años para considerar como empleado de larga trayectoria
+            threshold_years: Años desde su registro para considerarlo de larga trayectoria
             
         Returns:
-            True si es un empleado de larga trayectoria
+            True si el tiempo desde su registro es mayor o igual al umbral
         """
         duration = self.get_employment_duration()
         if not duration:
@@ -203,7 +228,7 @@ class Empleado:
             Diccionario con información formateada
         """
         duration = self.get_employment_duration()
-        duration_text = "N/A"
+        duration_text = "No disponible"
         
         if duration:
             if duration['años'] > 0:
@@ -214,6 +239,11 @@ class Empleado:
                 duration_text = f"{duration['meses']} mes(es)"
             else:
                 duration_text = f"{duration['días']} día(s)"
+        elif self.fecha_creacion:
+            # Hay fecha de creación pero no se pudo calcular duración (caso muy raro)
+            duration_text = "No disponible (error de cálculo)"
+        else:
+            duration_text = "No disponible (sin fecha de registro)"
         
         return {
             'id': str(self.id) if self.id else 'N/A',
@@ -226,8 +256,8 @@ class Empleado:
             'cedula': self.cedula,
             'email': self.email or 'No especificado',
             'telefono': self.telefono or 'No especificado',
-            'fecha_ingreso': 'No especificada',
-            'tiempo_servicio': 'No disponible',
+            'fecha_ingreso': format_date(self.fecha_creacion) if self.fecha_creacion else 'No especificada',
+            'tiempo_servicio': duration_text,
             'empleado_nuevo': 'Sí' if self.is_new_employee() else 'No',
             'empleado_veterano': 'Sí' if self.is_long_term_employee() else 'No',
             'tiene_contacto': 'Sí' if self.has_contact_info() else 'No',

@@ -452,15 +452,6 @@ class DashboardTab(LoggerMixin):
             # Obtener alertas activas
             alertas_activas = micro_alertas.obtener_alertas_activas()
 
-            # Actualizar badges de resumen
-            dashboard_alerts = micro_alertas.obtener_alertas_dashboard()
-            sev_summary = dashboard_alerts.get('summary', {}).get('by_severity', {})
-            if hasattr(self, 'alerts_crit_var'):
-                self.alerts_crit_var.set(f"Críticas: {sev_summary.get('CRÍTICO', 0)}")
-                self.alerts_high_var.set(f"Altas: {sev_summary.get('ALTO', 0)}")
-                self.alerts_med_var.set(f"Medias: {sev_summary.get('MEDIO', 0)}")
-                self.alerts_low_var.set(f"Bajas: {sev_summary.get('BAJO', 0)}")
-            
             # Agregar alertas al tree (máximo 10 más recientes)
             for idx, alert in enumerate(alertas_activas[:10]):
                 # Preparar datos

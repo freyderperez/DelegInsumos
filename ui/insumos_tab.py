@@ -6,7 +6,6 @@ Interfaz completa CRUD para gestión de insumos e inventario
 import tkinter as tk
 from tkinter import messagebox
 from typing import Dict, Any, List, Optional
-from decimal import Decimal
 
 try:
     import ttkbootstrap as ttk
@@ -68,7 +67,6 @@ class InsumosTab(LoggerMixin):
         self.form_cantidad_minima = tk.IntVar(value=5)
         self.form_cantidad_maxima = tk.IntVar(value=100)
         self.form_unidad_medida = tk.StringVar(value="unidad")
-        self.form_precio_unitario = tk.StringVar()
         self.form_proveedor = tk.StringVar()
         
         # Variables de filtros
@@ -777,7 +775,7 @@ class InsumosTab(LoggerMixin):
         self.form_cantidad_minima.set(5)
         self.form_cantidad_maxima.set(100)
         self.form_unidad_medida.set("unidad")
-        # No hay precio unitario
+        # El sistema no maneja precio unitario; solo stock y proveedor
         self.form_proveedor.set("")
         
         self.selected_insumo = None

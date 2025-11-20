@@ -558,6 +558,120 @@ class EmployeesNotesAndCodigoMigration(Migration):
             self.logger.error(f"Error en EmployeesNotesAndCodigoMigration.down: {e}")
             raise DatabaseMigrationException(f"Error revirtiendo migración 007: {e}")
 
+class RemoveMonetaryFromViewsMigration(Migration):
+    """Migración para eliminar campos monetarios de las vistas de reportes"""
+
+    def __init__(self):
+        super().__init__("008", "Eliminar campos monetarios de vistas de entregas e inventario")
+
+    def up(self) -> None:
+        """Actualiza las vistas para que no expongan valores monetarios."""
+        try:
+            with db_connection.transaction() as cursor:
+                # Actualizar vista de entregas completas sin columnas monetarias
+                cursor.execute("DROP VIEW IF EXISTS vw_entregas_completas")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_entregas_completas AS
+                SELECT
+                    e.id,
+                    e.codigo as codigo,
+                    e.empleado_id,
+                    e.insumo_id,
+                    e.cantidad,
+                    e.fecha_entrega,
+                    e.observaciones,
+                    e.entregado_por,
+                    emp.nombre_completo as empleado_nombre,
+                    emp.cargo as empleado_cargo,
+                    emp.departamento as empleado_departamento,
+                    emp.cedula as empleado_cedula,
+                    i.nombre as insumo_nombre,
+                    i.categoria as insumo_categoria,
+                    i.unidad_medida as insumo_unidad
+                FROM entregas e
+                INNER JOIN empleados emp ON e.empleado_id = emp.id
+                INNER JOIN insumos i ON e.insumo_id = i.id
+                ORDER BY e.fecha_entrega DESC
+                """)
+
+                # Actualizar vista de resumen de inventario sin valor_total monetario
+                cursor.execute("DROP VIEW IF EXISTS vw_resumen_inventario")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_resumen_inventario AS
+                SELECT
+                    categoria,
+                    COUNT(*) as total_insumos,
+                    SUM(cantidad_actual) as cantidad_total,
+                    AVG(cantidad_actual) as promedio_cantidad,
+                    MIN(cantidad_actual) as minimo_stock,
+                    MAX(cantidad_actual) as maximo_stock,
+                    SUM(CASE WHEN cantidad_actual <= cantidad_minima THEN 1 ELSE 0 END) as insumos_stock_bajo
+                FROM insumos
+                WHERE activo = 1
+                GROUP BY categoria
+                ORDER BY categoria
+                """)
+            self.logger.info("Vistas actualizadas para eliminar campos monetarios")
+        except Exception as e:
+            self.logger.error(f"Error en RemoveMonetaryFromViewsMigration.up: {e}")
+            raise DatabaseMigrationException(f"Error en migración 008: {e}")
+
+    def down(self) -> None:
+        """Restaura definiciones previas de las vistas con campos monetarios."""
+        try:
+            with db_connection.transaction() as cursor:
+                # Restaurar vista de entregas completas con columnas monetarias
+                cursor.execute("DROP VIEW IF EXISTS vw_entregas_completas")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_entregas_completas AS
+                SELECT
+                    e.id,
+                    e.codigo as codigo,
+                    e.empleado_id,
+                    e.insumo_id,
+                    e.cantidad,
+                    e.fecha_entrega,
+                    e.observaciones,
+                    e.entregado_por,
+                    emp.nombre_completo as empleado_nombre,
+                    emp.cargo as empleado_cargo,
+                    emp.departamento as empleado_departamento,
+                    emp.cedula as empleado_cedula,
+                    i.nombre as insumo_nombre,
+                    i.categoria as insumo_categoria,
+                    i.unidad_medida as insumo_unidad,
+                    i.precio_unitario as insumo_precio,
+                    (e.cantidad * i.precio_unitario) as valor_total
+                FROM entregas e
+                INNER JOIN empleados emp ON e.empleado_id = emp.id
+                INNER JOIN insumos i ON e.insumo_id = i.id
+                ORDER BY e.fecha_entrega DESC
+                """)
+
+                # Restaurar vista de resumen de inventario con valor_total monetario
+                cursor.execute("DROP VIEW IF EXISTS vw_resumen_inventario")
+                cursor.execute("""
+                CREATE VIEW IF NOT EXISTS vw_resumen_inventario AS
+                SELECT
+                    categoria,
+                    COUNT(*) as total_insumos,
+                    SUM(cantidad_actual) as cantidad_total,
+                    SUM(cantidad_actual * precio_unitario) as valor_total,
+                    AVG(cantidad_actual) as promedio_cantidad,
+                    MIN(cantidad_actual) as minimo_stock,
+                    MAX(cantidad_actual) as maximo_stock,
+                    SUM(CASE WHEN cantidad_actual <= cantidad_minima THEN 1 ELSE 0 END) as insumos_stock_bajo
+                FROM insumos
+                WHERE activo = 1
+                GROUP BY categoria
+                ORDER BY categoria
+                """)
+            self.logger.info("Vistas restauradas con campos monetarios")
+        except Exception as e:
+            self.logger.error(f"Error en RemoveMonetaryFromViewsMigration.down: {e}")
+            raise DatabaseMigrationException(f"Error revirtiendo migración 008: {e}")
+
+
 class MigrationManager(LoggerMixin):
     """
     Gestor de migraciones de base de datos
@@ -572,7 +686,8 @@ class MigrationManager(LoggerMixin):
             ViewsMigration(),
             UniqueIdsMigration(),
             ViewsPatchMigration(),
-            EmployeesNotesAndCodigoMigration()
+            EmployeesNotesAndCodigoMigration(),
+            RemoveMonetaryFromViewsMigration()
         ]
         
         # Crear tabla de control de migraciones

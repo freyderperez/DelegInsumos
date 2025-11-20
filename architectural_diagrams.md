@@ -78,7 +78,6 @@ erDiagram
         int cantidad_minima
         int cantidad_maxima
         varchar unidad_medida
-        decimal precio_unitario
         varchar proveedor
         timestamp fecha_creacion
         timestamp fecha_actualizacion
@@ -205,7 +204,7 @@ flowchart TD
     
     EVAL -->|cantidad_actual < cantidad_minima| LOW[Alerta Stock Bajo]
     EVAL -->|cantidad_actual <= 0| CRIT[Alerta Stock Crítico]
-    EVAL -->|cantidad_actual > cantidad_maxima| HIGH[Alerta Sobrecarga]
+    EVAL -->|cantidad_actual > cantidad_maxima| HIGH[Alerta Stock Exceso]
     EVAL -->|Normal| OK[Sin Alertas]
     
     LOW --> NOTIF[Generar Notificación]

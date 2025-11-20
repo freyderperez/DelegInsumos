@@ -110,7 +110,7 @@ En la primera ejecución:
 
 El dashboard ofrece una visión general del sistema:
 
-- **📊 Métricas Principales**: Total de insumos, valor del inventario, entregas del día
+- **📊 Métricas Principales**: Total de insumos, estado del inventario, entregas del día
 - **🚨 Alertas Activas**: Stock crítico, bajo stock, alertas del sistema
 - **📈 Estadísticas**: Inventario por categorías y entregas recientes
 - **⚡ Acciones Rápidas**: Botones para operaciones frecuentes
@@ -335,7 +335,6 @@ DelegInsumos/
 - Fecha y hora exacta de la entrega
 - Persona que realiza la entrega
 - Observaciones adicionales
-- Valor monetario de la transacción
 
 ---
 

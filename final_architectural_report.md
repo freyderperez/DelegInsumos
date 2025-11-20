@@ -102,7 +102,6 @@ CREATE TABLE insumos (
     cantidad_minima INTEGER DEFAULT 5 CHECK(cantidad_minima >= 0),
     cantidad_maxima INTEGER DEFAULT 100 CHECK(cantidad_maxima >= cantidad_minima),
     unidad_medida VARCHAR(20) DEFAULT 'unidad',
-    precio_unitario DECIMAL(10,2) DEFAULT 0.00 CHECK(precio_unitario >= 0),
     proveedor VARCHAR(100),
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -193,8 +192,8 @@ StockObserver → AlertaService → NotificationManager → UI Updates
 # ✅ VALIDADO: Lógica de alertas eficiente
 class AlertTypes:
     STOCK_BAJO = "cantidad_actual < cantidad_minima"
-    STOCK_CRITICO = "cantidad_actual <= 0"  
-    STOCK_EXCESO = "cantidad_actual > cantidad_maxima * 1.2"
+    STOCK_CRITICO = "cantidad_actual <= 0"
+    STOCK_EXCESO = "cantidad_actual > cantidad_maxima"
     ENTREGAS_FRECUENTES = "> 5 entregas mismo insumo/día"
     SISTEMA_BACKUP = "backup fallido > 3 intentos"
 ```
@@ -217,8 +216,7 @@ class AlertTypes:
 ### Reportes Avanzados (Fase 2) 📋
 1. **Dashboard Ejecutivo** - KPIs y métricas consolidadas
 2. **Análisis de Consumo** - Trends y proyecciones con ML básico
-3. **Reportes de Costo** - Valor monetario del inventario
-4. **Auditoría Completa** - Log de todas las operaciones críticas
+3. **Auditoría Completa** - Log de todas las operaciones críticas
 
 ---
 

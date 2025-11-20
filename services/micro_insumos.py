@@ -443,7 +443,7 @@ class MicroInsumosService(LoggerMixin):
     @service_exception_handler("MicroInsumosService")
     def obtener_resumen_por_categoria(self) -> List[Dict[str, Any]]:
         """
-        Obtiene resumen de inventario agrupado por categoría.
+        Obtiene resumen de inventario agrupado por categoría (sin valores monetarios).
         
         Returns:
             Lista con resumen por categoría
@@ -452,12 +452,13 @@ class MicroInsumosService(LoggerMixin):
         
         summary_data = self._repository.get_summary_by_category()
         
-        # Formatear datos para presentación
-        formatted_summary = []
+        # Formatear datos para presentación (solo cantidades)
+        formatted_summary: List[Dict[str, Any]] = []
         for data in summary_data:
             formatted_item = dict(data)
-            formatted_item['valor_total_formatted'] = f"${formatted_item['valor_total']:,.2f}"
-            formatted_item['promedio_cantidad_formatted'] = f"{formatted_item['promedio_cantidad']:.1f}"
+            # promedio_cantidad viene de la vista vw_resumen_inventario
+            promedio = formatted_item.get('promedio_cantidad', 0) or 0
+            formatted_item['promedio_cantidad_formatted'] = f"{float(promedio):.1f}"
             formatted_summary.append(formatted_item)
         
         return formatted_summary

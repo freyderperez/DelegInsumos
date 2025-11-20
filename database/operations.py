@@ -904,7 +904,12 @@ entrega_repo = EntregaRepository()
 
 def backup_db(backup_name: str = None) -> Dict[str, Any]:
     """
-    Crea un backup completo de la base de datos.
+    [LEGACY] Crea un backup completo de la base de datos copiando el archivo .db.
+
+    Esta función se mantiene solo por compatibilidad hacia atrás. El flujo
+    recomendado para nuevos desarrollos es utilizar:
+
+        services.backup_service.BackupService.crear_backup_manual
 
     Args:
         backup_name: Nombre personalizado para el backup (opcional)

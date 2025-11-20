@@ -14,23 +14,6 @@ from tkinter import messagebox, filedialog
 import json
 
 
-def format_currency(amount: Union[int, float, str]) -> str:
-    """
-    Formatea un monto como moneda colombiana.
-    
-    Args:
-        amount: Monto a formatear
-        
-    Returns:
-        String formateado como moneda (ej: "$1.234,56")
-    """
-    try:
-        num_amount = float(amount)
-        return f"${num_amount:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
-    except (ValueError, TypeError):
-        return "$0,00"
-
-
 def format_date(date_obj: Optional[datetime], format_type: str = "short") -> str:
     """
     Formatea una fecha según el tipo especificado.

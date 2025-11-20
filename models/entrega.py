@@ -6,7 +6,6 @@ Define la estructura y comportamiento de la entidad Entrega
 from dataclasses import dataclass
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from decimal import Decimal
 
 from utils.validators import validate_entrega_data
 from utils.helpers import format_date
@@ -38,8 +37,6 @@ class Entrega:
     insumo_nombre: str = ""
     insumo_categoria: str = ""
     insumo_unidad: str = ""
-    insumo_precio: Optional[Decimal] = None
-    valor_total: Optional[Decimal] = None
     
     def __post_init__(self):
         """Validaciones y conversiones post-inicialización"""
@@ -80,9 +77,7 @@ class Entrega:
             empleado_cedula=data.get('empleado_cedula', ''),
             insumo_nombre=data.get('insumo_nombre', ''),
             insumo_categoria=data.get('insumo_categoria', ''),
-            insumo_unidad=data.get('insumo_unidad', ''),
-            insumo_precio=Decimal(str(data.get('insumo_precio', '0.00'))) if data.get('insumo_precio') else None,
-            valor_total=Decimal(str(data.get('valor_total', '0.00'))) if data.get('valor_total') else None
+            insumo_unidad=data.get('insumo_unidad', '')
         )
     
     def to_dict(self, include_relations: bool = False) -> Dict[str, Any]:
@@ -114,9 +109,7 @@ class Entrega:
                 'empleado_cedula': self.empleado_cedula,
                 'insumo_nombre': self.insumo_nombre,
                 'insumo_categoria': self.insumo_categoria,
-                'insumo_unidad': self.insumo_unidad,
-                'insumo_precio': float(self.insumo_precio) if self.insumo_precio else None,
-                'valor_total': float(self.valor_total) if self.valor_total else None
+                'insumo_unidad': self.insumo_unidad
             })
         
         return result
@@ -158,20 +151,6 @@ class Entrega:
         days_passed = (datetime.now() - self.fecha_entrega).days
         return days_passed <= days_threshold
     
-    def is_high_value(self, threshold: float = 50000.0) -> bool:
-        """
-        Determina si la entrega es de alto valor.
-        
-        Args:
-            threshold: Umbral de valor en pesos
-            
-        Returns:
-            True si la entrega supera el umbral de valor
-        """
-        if not self.valor_total:
-            return False
-        
-        return float(self.valor_total) >= threshold
     
     def is_high_quantity(self, threshold: int = 10) -> bool:
         """
@@ -209,11 +188,6 @@ class Entrega:
         if self.is_high_quantity():
             priority_score += 2
             factors.append("Alta cantidad")
-        
-        # Factor: Alto valor
-        if self.is_high_value():
-            priority_score += 3
-            factors.append("Alto valor")
         
         # Factor: Entrega reciente
         if self.is_recent(1):  # Último día
@@ -307,7 +281,6 @@ class Entrega:
             'observaciones': self.observaciones or 'Sin observaciones',
             'entregado_por': self.entregado_por or 'No especificado',
             'es_reciente': 'Sí' if self.is_recent() else 'No',
-            'es_alto_valor': 'Sí' if self.is_high_value() else 'No',
             'es_alta_cantidad': 'Sí' if self.is_high_quantity() else 'No',
             'prioridad': priority['level'],
             'color_prioridad': priority['color'],
@@ -464,52 +437,48 @@ def group_entregas_by_insumo(entregas: List[Entrega]) -> Dict[str, List[Entrega]
 
 def calculate_delivery_statistics(entregas: List[Entrega]) -> Dict[str, Any]:
     """
-    Calcula estadísticas de las entregas.
+    Calcula estadísticas básicas de las entregas (sin valores monetarios).
     
     Args:
         entregas: Lista de entregas
         
     Returns:
-        Diccionario con estadísticas
+        Diccionario con estadísticas agregadas
     """
     if not entregas:
         return {
             'total_entregas': 0,
             'total_cantidad': 0,
-            'valor_total': Decimal('0.00'),
             'entregas_recientes': 0,
-            'entregas_alto_valor': 0,
             'entregas_alta_cantidad': 0,
             'empleados_unicos': 0,
             'insumos_unicos': 0,
             'promedio_cantidad': 0,
-            'promedio_valor': Decimal('0.00')
+            'top_empleados': [],
+            'top_insumos': []
         }
     
     total_entregas = len(entregas)
     total_cantidad = sum(e.cantidad for e in entregas)
-    valor_total = Decimal('0.00')
     
     entregas_recientes = sum(1 for e in entregas if e.is_recent())
-    entregas_alto_valor = sum(1 for e in entregas if e.is_high_value())
     entregas_alta_cantidad = sum(1 for e in entregas if e.is_high_quantity())
     
     empleados_unicos = len(set(e.empleado_id for e in entregas if e.empleado_id))
     insumos_unicos = len(set(e.insumo_id for e in entregas if e.insumo_id))
     
-    promedio_cantidad = total_cantidad / total_entregas
-    promedio_valor = Decimal('0.00')
+    promedio_cantidad = total_cantidad / total_entregas if total_entregas else 0
     
     # Top 5 empleados con más entregas
-    employee_counts = {}
+    employee_counts: Dict[str, int] = {}
     for entrega in entregas:
         key = f"{entrega.empleado_nombre} ({entrega.empleado_cedula})"
         employee_counts[key] = employee_counts.get(key, 0) + 1
     
-    top_employees = sorted(employee_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    top_empleados = sorted(employee_counts.items(), key=lambda x: x[1], reverse=True)[:5]
     
-    # Top 5 insumos más entregados
-    insumo_counts = {}
+    # Top 5 insumos más entregados (por cantidad)
+    insumo_counts: Dict[str, int] = {}
     for entrega in entregas:
         key = entrega.insumo_nombre
         insumo_counts[key] = insumo_counts.get(key, 0) + entrega.cantidad
@@ -519,17 +488,12 @@ def calculate_delivery_statistics(entregas: List[Entrega]) -> Dict[str, Any]:
     return {
         'total_entregas': total_entregas,
         'total_cantidad': total_cantidad,
-        'valor_total': valor_total,
-        'valor_total_formatted': 'N/A',
         'entregas_recientes': entregas_recientes,
-        'entregas_alto_valor': entregas_alto_valor,
         'entregas_alta_cantidad': entregas_alta_cantidad,
         'empleados_unicos': empleados_unicos,
         'insumos_unicos': insumos_unicos,
         'promedio_cantidad': round(promedio_cantidad, 2),
-        'promedio_valor': promedio_valor,
-        'promedio_valor_formatted': 'N/A',
-        'top_empleados': top_employees,
+        'top_empleados': top_empleados,
         'top_insumos': top_insumos
     }
 
@@ -547,16 +511,3 @@ def get_recent_deliveries(entregas: List[Entrega], days: int = 7) -> List[Entreg
     """
     return [entrega for entrega in entregas if entrega.is_recent(days)]
 
-
-def get_high_value_deliveries(entregas: List[Entrega], threshold: float = 50000.0) -> List[Entrega]:
-    """
-    Obtiene entregas de alto valor.
-    
-    Args:
-        entregas: Lista de entregas
-        threshold: Umbral de valor
-        
-    Returns:
-        Lista de entregas de alto valor
-    """
-    return [entrega for entrega in entregas if entrega.is_high_value(threshold)]

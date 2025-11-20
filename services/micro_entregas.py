@@ -12,7 +12,6 @@ from services.micro_insumos import micro_insumos
 from services.micro_empleados import micro_empleados
 from utils.logger import LoggerMixin, log_operation
 from utils.validators import validate_entrega_data
-from utils.helpers import format_date
 from exceptions.custom_exceptions import (
     service_exception_handler,
     BusinessLogicException,
@@ -131,7 +130,6 @@ class MicroEntregasService(LoggerMixin):
                 'priority': entrega.get_priority_level(),
                 'summary': entrega.get_delivery_summary(),
                 'is_recent': entrega.is_recent(),
-                'is_high_value': entrega.is_high_value(),
                 'is_high_quantity': entrega.is_high_quantity()
             })
         
@@ -454,15 +452,15 @@ class MicroEntregasService(LoggerMixin):
             'periods': {
                 'today': {
                     'total_entregas': today_stats['total_entregas'],
-                    'valor_total': today_stats['statistics']['valor_total_formatted']
+                    'total_cantidad': today_stats['statistics']['total_cantidad']
                 },
                 'week': {
                     'total_entregas': week_stats['total_entregas'],
-                    'valor_total': week_stats['statistics']['valor_total_formatted']
+                    'total_cantidad': week_stats['statistics']['total_cantidad']
                 },
                 'month': {
                     'total_entregas': month_stats['total_entregas'],
-                    'valor_total': month_stats['statistics']['valor_total_formatted']
+                    'total_cantidad': month_stats['statistics']['total_cantidad']
                 }
             },
             'last_updated': datetime.now().isoformat()
@@ -471,30 +469,6 @@ class MicroEntregasService(LoggerMixin):
         log_operation("ESTADISTICAS_ENTREGAS_OBTENIDAS", f"Análisis de {len(recent_entregas)} entregas")
         return complete_stats
     
-    @service_exception_handler("MicroEntregasService")
-    def obtener_entregas_alto_valor(self, threshold: float = 50000.0) -> List[Dict[str, Any]]:
-        """
-        Obtiene entregas de alto valor.
-        
-        Args:
-            threshold: Umbral de valor en pesos
-            
-        Returns:
-            Lista de entregas de alto valor
-        """
-        # Obtener entregas recientes
-        entregas_data = self._repository.get_all(limit=200)
-        
-        # Filtrar por alto valor
-        high_value_entregas = []
-        for data in entregas_data:
-            entrega = Entrega.from_dict(data)
-            if entrega.is_high_value(threshold):
-                entrega_dict = entrega.to_dict(include_relations=True)
-                entrega_dict['display_info'] = entrega.get_display_info()
-                high_value_entregas.append(entrega_dict)
-        
-        return high_value_entregas
     
     @service_exception_handler("MicroEntregasService")
     def obtener_top_empleados_entregas(self, limit: int = 10) -> List[Dict[str, Any]]:
@@ -522,16 +496,13 @@ class MicroEntregasService(LoggerMixin):
                     'empleado_departamento': data['empleado_departamento'],
                     'empleado_cedula': data['empleado_cedula'],
                     'total_entregas': 0,
-                    'total_cantidad': 0,
-                    'valor_total': 0
+                    'total_cantidad': 0
                 }
             
             employee_counts[emp_key]['total_entregas'] += 1
             employee_counts[emp_key]['total_cantidad'] += data['cantidad']
-            if data.get('valor_total'):
-                employee_counts[emp_key]['valor_total'] += float(data['valor_total'])
-        
-        # Ordenar por número de entregas
+    
+    # Ordenar por número de entregas
         top_employees = sorted(employee_counts.values(), 
                              key=lambda x: x['total_entregas'], 
                              reverse=True)[:limit]
@@ -564,16 +535,13 @@ class MicroEntregasService(LoggerMixin):
                     'insumo_categoria': data['insumo_categoria'],
                     'insumo_unidad': data['insumo_unidad'],
                     'total_entregas': 0,
-                    'cantidad_total': 0,
-                    'valor_total': 0
+                    'cantidad_total': 0
                 }
             
             insumo_counts[ins_key]['total_entregas'] += 1
             insumo_counts[ins_key]['cantidad_total'] += data['cantidad']
-            if data.get('valor_total'):
-                insumo_counts[ins_key]['valor_total'] += float(data['valor_total'])
-        
-        # Ordenar por cantidad total entregada
+    
+    # Ordenar por cantidad total entregada
         top_insumos = sorted(insumo_counts.values(), 
                            key=lambda x: x['cantidad_total'], 
                            reverse=True)[:limit]
