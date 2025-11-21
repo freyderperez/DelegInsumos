@@ -434,7 +434,7 @@ class EntregasTab(LoggerMixin):
         ).grid(row=5, column=0, columnspan=2, sticky="w", pady=(10, 0))
     
     def _create_validation_panel(self, parent):
-        """Crea panel de validación de la entrega"""
+        """""Crea panel de validación de la entrega"""
         
         validation_frame = ttk.Labelframe(
             parent,
