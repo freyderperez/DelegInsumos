@@ -28840,3 +28840,230 @@ _tkinter.TclError: can't add .!frame.!notebook.!frame2.!scrolledframe as slave o
 2025-11-25 11:06:40 - deleginsumos - INFO - CIERRE DEL SISTEMA
 2025-11-25 11:06:40 - deleginsumos - INFO - Timestamp: 2025-11-25T11:06:40.070653
 2025-11-25 11:06:40 - deleginsumos - INFO - ================================================================================
+2025-11-25 12:08:47 - deleginsumos.databaseconnection - INFO - DatabaseConnection inicializado - DB: ./data/deleginsumos.db
+2025-11-25 12:08:47 - deleginsumos.databaseconnection - INFO - DatabaseConnection inicializado - DB: ./data/deleginsumos.db
+2025-11-25 12:08:47 - deleginsumos.microinsumosservice - INFO - MicroInsumosService inicializado
+2025-11-25 12:08:47 - deleginsumos.microinsumosservice - INFO - MicroInsumosService inicializado
+2025-11-25 12:08:47 - deleginsumos.microempleadosservice - INFO - MicroEmpleadosService inicializado
+2025-11-25 12:08:47 - deleginsumos.microempleadosservice - INFO - MicroEmpleadosService inicializado
+2025-11-25 12:08:47 - deleginsumos.microentregasservice - INFO - MicroEntregasService inicializado
+2025-11-25 12:08:47 - deleginsumos.microentregasservice - INFO - MicroEntregasService inicializado
+2025-11-25 12:08:47 - deleginsumos.microalertasservice - INFO - MicroAlertasService inicializado
+2025-11-25 12:08:47 - deleginsumos.microalertasservice - INFO - MicroAlertasService inicializado
+2025-11-25 12:08:53 - deleginsumos.reportesservice - INFO - ReportesService inicializado
+2025-11-25 12:08:53 - deleginsumos.reportesservice - INFO - ReportesService inicializado
+2025-11-25 12:08:53 - deleginsumos.backupservice - INFO - BackupService inicializado
+2025-11-25 12:08:53 - deleginsumos.backupservice - INFO - BackupService inicializado
+2025-11-25 12:08:53 - deleginsumos.backupservice - INFO - Próximo backup automático programado para: 26/11/2025 12:08
+2025-11-25 12:08:53 - deleginsumos.backupservice - INFO - Próximo backup automático programado para: 26/11/2025 12:08
+2025-11-25 12:08:53 - deleginsumos - INFO - ================================================================================
+2025-11-25 12:08:53 - deleginsumos - INFO - INICIO DEL SISTEMA: DelegInsumos v1.0.0
+2025-11-25 12:08:53 - deleginsumos - INFO - Descripción: Sistema de Gestión de Insumos de Oficina
+2025-11-25 12:08:53 - deleginsumos - INFO - Autor: KiloCode System
+2025-11-25 12:08:53 - deleginsumos - INFO - Timestamp: 2025-11-25T12:08:53.173683
+2025-11-25 12:08:53 - deleginsumos - INFO - ================================================================================
+2025-11-25 12:08:53 - deleginsumos - INFO - Iniciando DelegInsumos v1.0.0
+2025-11-25 12:08:53 - deleginsumos - INFO - Inicializando base de datos...
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Inicializando base de datos DelegInsumos
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Inicializando base de datos DelegInsumos
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Iniciando proceso de migración
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Iniciando proceso de migración
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 001 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 001 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 002 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 002 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 003 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 003 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 004 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 004 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 005 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 005 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 006 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 006 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 007 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 007 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 008 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Migración 008 ya fue aplicada
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: schema_migrations
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Base de datos actualizada - No hay nuevas migraciones
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Base de datos actualizada - No hay nuevas migraciones
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: sqlite_master
+2025-11-25 12:08:53 - deleginsumos.database - INFO - DB_SELECT: Tabla: sqlite_master
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Base de datos inicializada exitosamente
+2025-11-25 12:08:53 - deleginsumos.migrationmanager - INFO - Base de datos inicializada exitosamente
+2025-11-25 12:08:53 - deleginsumos - INFO - Base de datos inicializada correctamente
+2025-11-25 12:08:53 - deleginsumos - INFO - Ventana principal creada: 1100x750 (responsive)
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:54 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:54 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 8, Activos: True
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:54 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:08:54 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:08:54 - deleginsumos.dashboardtab - INFO - DashboardTab inicializado
+2025-11-25 12:08:54 - deleginsumos.dashboardtab - INFO - DashboardTab inicializado
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:54 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:54 - deleginsumos.insumostab - INFO - Lista de insumos actualizada: 9 items (quick=False)
+2025-11-25 12:08:54 - deleginsumos.insumostab - INFO - Lista de insumos actualizada: 9 items (quick=False)
+2025-11-25 12:08:54 - deleginsumos.insumostab - INFO - InsumosTab inicializado
+2025-11-25 12:08:54 - deleginsumos.insumostab - INFO - InsumosTab inicializado
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:54 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:54 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 12, Activos: False
+2025-11-25 12:08:54 - deleginsumos.empleadostab - INFO - Lista de empleados actualizada: 12 empleados (quick=False)
+2025-11-25 12:08:54 - deleginsumos.empleadostab - INFO - Lista de empleados actualizada: 12 empleados (quick=False)
+2025-11-25 12:08:54 - deleginsumos.empleadostab - INFO - EmpleadosTab inicializado
+2025-11-25 12:08:54 - deleginsumos.empleadostab - INFO - EmpleadosTab inicializado
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: entregas
+2025-11-25 12:08:55 - deleginsumos - INFO - OPERACIÓN: ENTREGAS_LISTADAS | DETALLES: Devueltas: 6, Offset: 0
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:55 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_VALIDOS_ENTREGAS | DETALLES: Total válidos: 8
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:55 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:55 - deleginsumos.entregastab - INFO - Lista de entregas actualizada: 6 entregas (quick=False)
+2025-11-25 12:08:55 - deleginsumos.entregastab - INFO - Lista de entregas actualizada: 6 entregas (quick=False)
+2025-11-25 12:08:55 - deleginsumos.entregastab - INFO - EntregasTab inicializado
+2025-11-25 12:08:55 - deleginsumos.entregastab - INFO - EntregasTab inicializado
+2025-11-25 12:08:55 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:08:55 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:08:55 - deleginsumos.reportestab - INFO - ReportesTab inicializado
+2025-11-25 12:08:55 - deleginsumos.reportestab - INFO - ReportesTab inicializado
+2025-11-25 12:08:55 - deleginsumos - INFO - Tabs de la interfaz creados
+2025-11-25 12:08:55 - deleginsumos - INFO - Interfaz principal creada
+2025-11-25 12:08:55 - deleginsumos - INFO - DelegInsumos inicializado exitosamente
+2025-11-25 12:08:55 - deleginsumos - INFO - Ventana principal mostrada - Sistema listo
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:55 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:55 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 8, Activos: True
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:55 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:08:55 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Iniciando verificación completa de alertas
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Iniciando verificación completa de alertas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_stock_alerts
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_stock_alerts
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: ALERTAS_STOCK_OBTENIDAS | DETALLES: Críticas: 2, Bajas: 1
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock agotado: Cartuchos HP Negro (KEY: STOCK_CRITICO:20:)
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock agotado: Cartuchos HP Negro (KEY: STOCK_CRITICO:20:)
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock agotado: Test Integración Final (KEY: STOCK_CRITICO:22:)
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock agotado: Test Integración Final (KEY: STOCK_CRITICO:22:)
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock bajo: Bolígrafos Azules (KEY: STOCK_BAJO:19:)
+2025-11-25 12:08:57 - deleginsumos.microalertasservice - INFO - Nueva alerta añadida: Stock bajo: Bolígrafos Azules (KEY: STOCK_BAJO:19:)
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 8, Activos: True
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: VERIFICACION_ALERTAS_COMPLETA | DETALLES: Nuevas alertas encontradas: 3
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: insumos
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: INSUMOS_LISTADOS | DETALLES: Total: 9, Activos: True
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:08:57 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 8, Activos: True
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_resumen_inventario
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.database - INFO - DB_SELECT: Tabla: vw_entregas_completas
+2025-11-25 12:08:57 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:08:57 - deleginsumos.dashboardtab - INFO - Dashboard actualizado exitosamente
+2025-11-25 12:09:04 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en open_reports_directory | ReportesTab
+2025-11-25 12:09:04 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en open_reports_directory | ReportesTab
+2025-11-25 12:09:04 - deleginsumos.reportestab - INFO - Directorio de reportes abierto: reportes
+2025-11-25 12:09:04 - deleginsumos.reportestab - INFO - Directorio de reportes abierto: reportes
+2025-11-25 12:09:14 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:09:14 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:09:17 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en generate_employees_report | ReportesTab
+2025-11-25 12:09:17 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en generate_employees_report | ReportesTab
+2025-11-25 12:09:17 - deleginsumos.reportesservice - INFO - Generando reporte de empleados en PDF
+2025-11-25 12:09:17 - deleginsumos.reportesservice - INFO - Generando reporte de empleados en PDF
+2025-11-25 12:09:17 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:09:17 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:09:17 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 12, Activos: False
+2025-11-25 12:09:17 - deleginsumos - INFO - OPERACIÓN: REPORTE_EMPLEADOS_PDF_GENERADO | DETALLES: Archivo: empleados_listado_20251125_120917.pdf
+2025-11-25 12:09:17 - deleginsumos.reportesservice - INFO - Reporte de empleados PDF generado: reportes\empleados_listado_20251125_120917.pdf
+2025-11-25 12:09:17 - deleginsumos.reportesservice - INFO - Reporte de empleados PDF generado: reportes\empleados_listado_20251125_120917.pdf
+2025-11-25 12:09:19 - deleginsumos.reportestab - INFO - Archivo abierto: empleados_listado_20251125_120917.pdf
+2025-11-25 12:09:19 - deleginsumos.reportestab - INFO - Archivo abierto: empleados_listado_20251125_120917.pdf
+2025-11-25 12:09:19 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:09:19 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:09:42 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en generate_employees_report | ReportesTab
+2025-11-25 12:09:42 - deleginsumos.ui - INFO - ACCIÓN_USUARIO: CLICK en generate_employees_report | ReportesTab
+2025-11-25 12:09:42 - deleginsumos.reportesservice - INFO - Generando reporte de empleados en Excel
+2025-11-25 12:09:42 - deleginsumos.reportesservice - INFO - Generando reporte de empleados en Excel
+2025-11-25 12:09:42 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:09:42 - deleginsumos.database - INFO - DB_SELECT: Tabla: empleados
+2025-11-25 12:09:42 - deleginsumos - INFO - OPERACIÓN: EMPLEADOS_LISTADOS | DETALLES: Total: 12, Activos: False
+2025-11-25 12:09:42 - deleginsumos - INFO - OPERACIÓN: REPORTE_EMPLEADOS_EXCEL_GENERADO | DETALLES: Archivo: empleados_listado_20251125_120942.xlsx
+2025-11-25 12:09:42 - deleginsumos.reportesservice - INFO - Reporte de empleados Excel generado: reportes\empleados_listado_20251125_120942.xlsx
+2025-11-25 12:09:42 - deleginsumos.reportesservice - INFO - Reporte de empleados Excel generado: reportes\empleados_listado_20251125_120942.xlsx
+2025-11-25 12:09:44 - deleginsumos.reportestab - INFO - Archivo abierto: empleados_listado_20251125_120942.xlsx
+2025-11-25 12:09:44 - deleginsumos.reportestab - INFO - Archivo abierto: empleados_listado_20251125_120942.xlsx
+2025-11-25 12:09:44 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
+2025-11-25 12:09:44 - deleginsumos.reportestab - INFO - Datos de reportes actualizados
