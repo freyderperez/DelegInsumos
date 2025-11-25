@@ -1,22 +1,22 @@
 {
-  "last_backup": "2025-11-20T11:54:59.910924",
-  "last_success": "2025-11-20T11:54:59.910924",
-  "backup_count": 7,
-  "total_size_mb": 0.04475116729736328,
+  "last_backup": "2025-11-25T09:09:54.130144",
+  "last_success": "2025-11-25T09:09:54.130144",
+  "backup_count": 8,
+  "total_size_mb": 0.05272388458251953,
   "last_backup_info": {
     "type": "manual",
-    "filename": "manual_backup_Test_Integration_20251120_115459.db_20251120_115459.db.gz",
-    "filepath": "backups\\manual\\manual_backup_Test_Integration_20251120_115459.db_20251120_115459.db.gz",
-    "size_mb": 0.0075626373291015625,
-    "created_at": "2025-11-20T11:54:59.910924",
-    "description": "Test Integration",
+    "filename": "manual_backup_backup_desde_dashboard_20251125_090953.db_20251125_090953.db.gz",
+    "filepath": "backups\\manual\\manual_backup_backup_desde_dashboard_20251125_090953.db_20251125_090953.db.gz",
+    "size_mb": 0.00797271728515625,
+    "created_at": "2025-11-25T09:09:54.130144",
+    "description": "backup_desde_dashboard",
     "compressed": true,
     "validation": {
       "valid": true,
       "integrity_check": "ok",
       "tables_found": 3,
-      "size_mb": 0.0075626373291015625,
-      "validation_time": "2025-11-20T11:54:59.910795",
+      "size_mb": 0.00797271728515625,
+      "validation_time": "2025-11-25T09:09:54.130144",
       "error": null
     }
   }

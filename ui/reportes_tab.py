@@ -173,15 +173,17 @@ class ReportesTab(LoggerMixin):
         self.start_date = DateEntry(
             del_frame,
             bootstyle="primary",
-            startdate=date.today() - timedelta(days=30)
+            startdate=date.today() - timedelta(days=30),
+            dateformat="%d/%m/%Y"
         )
         self.start_date.pack(fill=X, pady=(2, 5))
-        
+
         ttk.Label(del_frame, text="Fecha de Fin:").pack(anchor="w")
         self.end_date = DateEntry(
             del_frame,
             bootstyle="primary",
-            startdate=date.today()
+            startdate=date.today(),
+            dateformat="%d/%m/%Y"
         )
         self.end_date.pack(fill=X, pady=(2, 10))
         

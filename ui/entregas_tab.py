@@ -256,10 +256,10 @@ class EntregasTab(LoggerMixin):
         # Botón para eliminar la entrega seleccionada del historial
         ttk.Button(
             stats_frame,
-            text="🗑️ Eliminar Seleccionada",
+            text="🗑️ Eliminar Entrega",
             command=self._delete_selected_entrega,
             bootstyle="danger-outline",
-            width=22
+            width=24
         ).pack(side=RIGHT, padx=(5, 5))
         
         self.period_stats_label = ttk.Label(
