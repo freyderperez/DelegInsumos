@@ -136,11 +136,11 @@ class DataValidator:
         
         return int_value
     
-    @staticmethod
+    """@staticmethod
     def validate_decimal(value: Any, field_name: str, min_val: Optional[float] = None, 
                         max_val: Optional[float] = None, decimal_places: int = 2, 
                         required: bool = True) -> Decimal:
-        """
+        
         Valida un campo decimal/monetario.
         
         Args:
@@ -156,7 +156,7 @@ class DataValidator:
             
         Raises:
             ValidationException: Si la validación falla
-        """
+        
         if required:
             DataValidator.validate_required(value, field_name)
         elif value is None or value == "":
@@ -188,7 +188,7 @@ class DataValidator:
                 f"No puede tener más de {decimal_places} decimales"
             )
         
-        return decimal_value.quantize(Decimal('0.01'))  # Redondear a 2 decimales
+        return decimal_value.quantize(Decimal('0.01'))  # Redondear a 2 decimales"""
     
     @staticmethod
     def validate_email(value: Any, field_name: str, required: bool = False) -> str:
@@ -406,9 +406,6 @@ def validate_insumo_data(data: Dict[str, Any]) -> Dict[str, Any]:
         ),
         'unidad_medida': validator.validate_string(
             data.get('unidad_medida', 'unidad'), 'unidad_medida', max_length=20
-        ),
-        'precio_unitario': validator.validate_decimal(
-            data.get('precio_unitario', 0), 'precio_unitario', min_val=0
         ),
         'proveedor': validator.validate_string(
             data.get('proveedor', ''), 'proveedor', max_length=100, required=False

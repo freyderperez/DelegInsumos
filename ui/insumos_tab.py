@@ -11,6 +11,7 @@ try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import *
     from ttkbootstrap.dialogs import Messagebox
+    from ttkbootstrap.scrolled import ScrolledFrame
 except ImportError:
     print("Error: ttkbootstrap requerido")
 
@@ -34,10 +35,14 @@ class InsumosTab(LoggerMixin):
         super().__init__()
         self.parent = parent
         self.app = app_instance
-        
+
         # Crear frame principal
         self.frame = ttk.Frame(parent, padding="10")
-        
+
+        # Crear contenedor con scroll
+        self.container = ScrolledFrame(self.frame, autohide=True)
+        self.container.pack(fill=BOTH, expand=True)
+
         # Variables de datos
         self.insumos_list = []
         self.selected_insumo = None
@@ -78,32 +83,32 @@ class InsumosTab(LoggerMixin):
         """Crea la interfaz del tab de insumos"""
         
         # Título del tab
-        title_frame = ttk.Frame(self.frame)
+        title_frame = ttk.Frame(self.container)
         title_frame.pack(fill=X, pady=(0, 20))
-        
+
         ttk.Label(
             title_frame,
             text="📦 Gestión de Insumos",
             font=("Helvetica", 16, "bold"),
             bootstyle="primary"
         ).pack(side=LEFT)
-        
+
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
             command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
-        
+
         ttk.Button(
             title_frame,
             text="➕ Nuevo Insumo",
             command=self.show_add_form,
             bootstyle="success"
         ).pack(side=RIGHT)
-        
+
         # Panel principal dividido
-        main_paned = ttk.Panedwindow(self.frame, orient=HORIZONTAL)
+        main_paned = ttk.Panedwindow(self.container, orient=HORIZONTAL)
         main_paned.pack(fill=BOTH, expand=True)
         
         # Panel izquierdo: Lista e insumos
@@ -501,7 +506,7 @@ class InsumosTab(LoggerMixin):
             for insumo in self.insumos_list:
                 # Filtro de búsqueda
                 if search_term:
-                    searchable_text = f"{insumo['nombre']} {insumo['categoria']} {insumo.get('proveedor', '')}".lower()
+                    searchable_text = f"{insumo['codigo']} {insumo['nombre']} {insumo['categoria']} {insumo.get('proveedor', '')}".lower()
                     if search_term not in searchable_text:
                         continue
                 

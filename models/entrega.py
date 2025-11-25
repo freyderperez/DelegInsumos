@@ -359,80 +359,6 @@ def create_entrega_from_form_data(form_data: Dict[str, Any]) -> Entrega:
     return entrega
 
 
-def group_entregas_by_date(entregas: List[Entrega]) -> Dict[str, List[Entrega]]:
-    """
-    Agrupa entregas por fecha.
-    
-    Args:
-        entregas: Lista de entregas
-        
-    Returns:
-        Diccionario agrupando entregas por fecha
-    """
-    grouped = {}
-    
-    for entrega in entregas:
-        if entrega.fecha_entrega:
-            date_key = entrega.fecha_entrega.strftime('%Y-%m-%d')
-            if date_key not in grouped:
-                grouped[date_key] = []
-            grouped[date_key].append(entrega)
-    
-    # Ordenar cada grupo por hora
-    for date_key in grouped:
-        grouped[date_key].sort(key=lambda e: e.fecha_entrega or datetime.min)
-    
-    return grouped
-
-
-def group_entregas_by_employee(entregas: List[Entrega]) -> Dict[str, List[Entrega]]:
-    """
-    Agrupa entregas por empleado.
-    
-    Args:
-        entregas: Lista de entregas
-        
-    Returns:
-        Diccionario agrupando entregas por empleado
-    """
-    grouped = {}
-    
-    for entrega in entregas:
-        employee_key = f"{entrega.empleado_nombre} ({entrega.empleado_cedula})"
-        if employee_key not in grouped:
-            grouped[employee_key] = []
-        grouped[employee_key].append(entrega)
-    
-    # Ordenar cada grupo por fecha descendente
-    for employee_key in grouped:
-        grouped[employee_key].sort(key=lambda e: e.fecha_entrega or datetime.min, reverse=True)
-    
-    return grouped
-
-
-def group_entregas_by_insumo(entregas: List[Entrega]) -> Dict[str, List[Entrega]]:
-    """
-    Agrupa entregas por insumo.
-    
-    Args:
-        entregas: Lista de entregas
-        
-    Returns:
-        Diccionario agrupando entregas por insumo
-    """
-    grouped = {}
-    
-    for entrega in entregas:
-        insumo_key = f"{entrega.insumo_nombre} ({entrega.insumo_categoria})"
-        if insumo_key not in grouped:
-            grouped[insumo_key] = []
-        grouped[insumo_key].append(entrega)
-    
-    # Ordenar cada grupo por fecha descendente
-    for insumo_key in grouped:
-        grouped[insumo_key].sort(key=lambda e: e.fecha_entrega or datetime.min, reverse=True)
-    
-    return grouped
 
 
 def calculate_delivery_statistics(entregas: List[Entrega]) -> Dict[str, Any]:
@@ -498,16 +424,4 @@ def calculate_delivery_statistics(entregas: List[Entrega]) -> Dict[str, Any]:
     }
 
 
-def get_recent_deliveries(entregas: List[Entrega], days: int = 7) -> List[Entrega]:
-    """
-    Obtiene entregas recientes.
-    
-    Args:
-        entregas: Lista de entregas
-        days: Número de días para considerar como reciente
-        
-    Returns:
-        Lista de entregas recientes
-    """
-    return [entrega for entrega in entregas if entrega.is_recent(days)]
 

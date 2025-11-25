@@ -240,44 +240,6 @@ class MicroEmpleadosService(LoggerMixin):
         }
     
     
-    @service_exception_handler("MicroEmpleadosService")
-    def eliminar_empleado(self, empleado_id: int, soft_delete: bool = False) -> Dict[str, Any]:
-        """
-        Elimina un empleado del sistema.
-
-        Args:
-            empleado_id: ID del empleado
-            soft_delete: Si usar eliminación suave (por defecto False - eliminación permanente)
-
-        Returns:
-            Diccionario con resultado de la eliminación
-
-        Raises:
-            RecordNotFoundException: Si el empleado no existe
-        """
-        self.logger.info(f"Eliminando empleado ID: {empleado_id} (soft: {soft_delete})")
-
-        # Verificar que existe
-        existing_data = self._repository.get_by_id(empleado_id)
-        if not existing_data:
-            raise RecordNotFoundException("empleado", str(empleado_id))
-
-        empleado_nombre = existing_data.get('nombre_completo', 'N/A')
-
-        # Eliminar
-        success = self._repository.delete(empleado_id, soft_delete=soft_delete)
-
-        if not success:
-            raise BusinessLogicException("No se pudo eliminar el empleado")
-
-        delete_type = "eliminado" if not soft_delete else "desactivado"
-        log_operation("EMPLEADO_ELIMINADO", f"ID: {empleado_id}, Tipo: {delete_type}")
-        self.logger.info(f"Empleado {empleado_id} {delete_type} exitosamente")
-
-        return {
-            'success': True,
-            'message': f"Empleado '{empleado_nombre}' {delete_type} exitosamente"
-        }
 
     @service_exception_handler("MicroEmpleadosService")
     def buscar_empleados(self, termino: str, active_only: bool = True) -> List[Dict[str, Any]]:
@@ -473,53 +435,45 @@ class MicroEmpleadosService(LoggerMixin):
         log_operation("EMPLEADOS_VALIDOS_ENTREGAS", f"Total válidos: {len(valid_employees)}")
         return valid_employees
     
+
     @service_exception_handler("MicroEmpleadosService")
-    def obtener_empleados_nuevos(self, threshold_months: int = 6) -> List[Dict[str, Any]]:
+    def eliminar_empleado(self, empleado_id: int, soft_delete: bool = False) -> Dict[str, Any]:
         """
-        Obtiene lista de empleados nuevos.
-        
+        Elimina un empleado del sistema.
+
         Args:
-            threshold_months: Meses para considerar como nuevo empleado
-            
+            empleado_id: ID del empleado
+            soft_delete: Si usar eliminación suave (por defecto False - eliminación permanente)
+
         Returns:
-            Lista de empleados nuevos
+            Diccionario con resultado de la eliminación
+
+        Raises:
+            RecordNotFoundException: Si el empleado no existe
         """
-        empleados_data = self._repository.get_all(active_only=True)
-        empleados_nuevos = []
-        
-        for data in empleados_data:
-            empleado = Empleado.from_dict(data)
-            if empleado.is_new_employee(threshold_months):
-                employee_info = empleado.to_dict()
-                employee_info['display_info'] = empleado.get_display_info()
-                employee_info['employment_duration'] = empleado.get_employment_duration()
-                empleados_nuevos.append(employee_info)
-        
-        return empleados_nuevos
-    
-    @service_exception_handler("MicroEmpleadosService")
-    def obtener_empleados_veteranos(self, threshold_years: int = 5) -> List[Dict[str, Any]]:
-        """
-        Obtiene lista de empleados veteranos.
-        
-        Args:
-            threshold_years: Años para considerar como empleado veterano
-            
-        Returns:
-            Lista de empleados veteranos
-        """
-        empleados_data = self._repository.get_all(active_only=True)
-        empleados_veteranos = []
-        
-        for data in empleados_data:
-            empleado = Empleado.from_dict(data)
-            if empleado.is_long_term_employee(threshold_years):
-                employee_info = empleado.to_dict()
-                employee_info['display_info'] = empleado.get_display_info()
-                employee_info['employment_duration'] = empleado.get_employment_duration()
-                empleados_veteranos.append(employee_info)
-        
-        return empleados_veteranos
+        self.logger.info(f"Eliminando empleado ID: {empleado_id} (soft: {soft_delete})")
+
+        # Verificar que existe
+        existing_data = self._repository.get_by_id(empleado_id)
+        if not existing_data:
+            raise RecordNotFoundException("empleado", str(empleado_id))
+
+        empleado_nombre = existing_data.get('nombre_completo', 'N/A')
+
+        # Eliminar
+        success = self._repository.delete(empleado_id, soft_delete=soft_delete)
+
+        if not success:
+            raise BusinessLogicException("No se pudo eliminar el empleado")
+
+        delete_type = "eliminado" if not soft_delete else "desactivado"
+        log_operation("EMPLEADO_ELIMINADO", f"ID: {empleado_id}, Tipo: {delete_type}")
+        self.logger.info(f"Empleado {empleado_id} {delete_type} exitosamente")
+
+        return {
+            'success': True,
+            'message': f"Empleado '{empleado_nombre}' {delete_type} exitosamente"
+        }
 
 
 # Instancia global del microservicio

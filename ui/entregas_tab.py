@@ -12,6 +12,7 @@ try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import *
     from ttkbootstrap.widgets import DateEntry
+    from ttkbootstrap.scrolled import ScrolledFrame
 except ImportError:
     print("Error: ttkbootstrap requerido")
 
@@ -37,10 +38,14 @@ class EntregasTab(LoggerMixin):
         super().__init__()
         self.parent = parent
         self.app = app_instance
-        
+
         # Crear frame principal
         self.frame = ttk.Frame(parent, padding="15")
-        
+
+        # Crear contenedor con scroll
+        self.container = ScrolledFrame(self.frame, autohide=True)
+        self.container.pack(fill=BOTH, expand=True)
+
         # Variables de datos
         self.entregas_list = []
         self.empleados_disponibles = []
@@ -48,16 +53,16 @@ class EntregasTab(LoggerMixin):
         self.selected_entrega = None
         # Mapeo interno para almacenar datos completos por item del Treeview
         self._item_data = {}
-        
+
         # Variables de formulario
         self._init_form_variables()
-        
+
         # Crear interfaz
         self._create_interface()
-        
+
         # Cargar datos inicial
         self.refresh_data()
-        
+
         self.logger.info("EntregasTab inicializado")
     
     def _init_form_variables(self):
@@ -84,32 +89,32 @@ class EntregasTab(LoggerMixin):
         """Crea la interfaz del tab de entregas"""
         
         # Título del tab
-        title_frame = ttk.Frame(self.frame)
+        title_frame = ttk.Frame(self.container)
         title_frame.pack(fill=X, pady=(0, 20))
-        
+
         ttk.Label(
             title_frame,
             text="📋 Registro de Entregas",
             font=("Helvetica", 16, "bold"),
             bootstyle="primary"
         ).pack(side=LEFT)
-        
+
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
             command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
-        
+
         ttk.Button(
             title_frame,
             text="➕ Nueva Entrega",
             command=self.show_add_form,
             bootstyle="success"
         ).pack(side=RIGHT)
-        
+
         # Panel principal dividido
-        main_paned = ttk.Panedwindow(self.frame, orient=HORIZONTAL)
+        main_paned = ttk.Panedwindow(self.container, orient=HORIZONTAL)
         main_paned.pack(fill=BOTH, expand=True)
         
         # Panel izquierdo: Lista de entregas
@@ -524,7 +529,7 @@ class EntregasTab(LoggerMixin):
             self.logger.error(f"Error actualizando datos de entregas: {e}")
             if hasattr(self.app, 'update_status'):
                 self.app.update_status("Error cargando entregas", "danger")
-            show_error_message("Error", f"Error cargando entregas: {str(e)}", self.frame)
+            show_error_message("Error", f"Error cargando entregas: {str(e)}", self.container)
     
     def _load_available_employees(self):
         """Carga la lista de empleados disponibles para entregas"""

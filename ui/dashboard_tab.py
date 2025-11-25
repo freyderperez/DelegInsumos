@@ -13,6 +13,7 @@ try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import *
     from ttkbootstrap.widgets import DateEntry
+    from ttkbootstrap.scrolled import ScrolledFrame
 except ImportError:
     print("Error: ttkbootstrap requerido. Ejecute: pip install ttkbootstrap")
 
@@ -35,28 +36,32 @@ class DashboardTab(LoggerMixin):
         super().__init__()
         self.parent = parent
         self.app = app_instance
-        
+
         # Crear frame principal
         self.frame = ttk.Frame(parent, padding="15")
-        
+
+        # Crear contenedor con scroll
+        self.container = ScrolledFrame(self.frame, autohide=True)
+        self.container.pack(fill=BOTH, expand=True)
+
         # Variables de datos
         self.dashboard_data = {}
-        
+
         # Crear interfaz
         self._create_interface()
-        
+
         # Cargar datos inicial
         self.refresh_data()
-        
+
         self.logger.info("DashboardTab inicializado")
     
     def _create_interface(self):
         """Crea la interfaz del dashboard"""
-        
+
         # Título de bienvenida
-        welcome_frame = ttk.Frame(self.frame)
+        welcome_frame = ttk.Frame(self.container)
         welcome_frame.pack(fill=X, pady=(0, 20))
-        
+
         welcome_label = ttk.Label(
             welcome_frame,
             text=f"🏢 Bienvenido a DelegInsumos",
@@ -64,7 +69,7 @@ class DashboardTab(LoggerMixin):
             bootstyle="primary"
         )
         welcome_label.pack(side=LEFT)
-        
+
         # Botón de actualización
         refresh_btn = ttk.Button(
             welcome_frame,
@@ -73,27 +78,27 @@ class DashboardTab(LoggerMixin):
             bootstyle="outline-primary"
         )
         refresh_btn.pack(side=RIGHT)
-        
+
         # Panel de métricas principales
         self._create_metrics_section()
-        
+
         # Panel de alertas
         self._create_alerts_section()
-        
+
         # Panel de estadísticas
         self._create_statistics_section()
-        
+
         # Panel de acciones rápidas
         self._create_quick_actions_section()
-        
+
         self.logger.debug("Interfaz del dashboard creada")
     
     def _create_metrics_section(self):
         """Crea la sección de métricas principales"""
-        
+
         # Frame contenedor con título
         metrics_labelframe = ttk.Labelframe(
-            self.frame,
+            self.container,
             text="📊 Métricas Principales",
             padding="15",
             bootstyle="primary"
@@ -166,10 +171,10 @@ class DashboardTab(LoggerMixin):
     
     def _create_alerts_section(self):
         """Crea la sección de alertas del sistema"""
-        
+
         # Frame contenedor
         alerts_labelframe = ttk.Labelframe(
-            self.frame,
+            self.container,
             text="🚨 Alertas del Sistema",
             padding="15",
             bootstyle="warning"
@@ -186,7 +191,6 @@ class DashboardTab(LoggerMixin):
             alerts_content,
             columns=columns,
             show="tree headings",
-            height=5,
             bootstyle="warning"
         )
         
@@ -241,9 +245,9 @@ class DashboardTab(LoggerMixin):
     
     def _create_statistics_section(self):
         """Crea la sección de estadísticas del sistema"""
-        
+
         # Frame principal dividido en dos columnas
-        stats_frame = ttk.Frame(self.frame)
+        stats_frame = ttk.Frame(self.container)
         stats_frame.pack(fill=X, pady=(0, 15))
         
         # Columna izquierda: Stock por categorías
@@ -260,7 +264,6 @@ class DashboardTab(LoggerMixin):
             left_frame,
             columns=["Total Items", "Cantidad"],
             show="tree headings",
-            height=6,
             bootstyle="success"
         )
         
@@ -288,7 +291,6 @@ class DashboardTab(LoggerMixin):
             right_frame,
             columns=["Empleado", "Insumo", "Cantidad", "Fecha"],
             show="tree headings",
-            height=6,
             bootstyle="info"
         )
         
@@ -310,9 +312,9 @@ class DashboardTab(LoggerMixin):
     
     def _create_quick_actions_section(self):
         """Crea la sección de acciones rápidas"""
-        
+
         actions_labelframe = ttk.Labelframe(
-            self.frame,
+            self.container,
             text="⚡ Acciones Rápidas",
             padding="15",
             bootstyle="dark"
@@ -407,6 +409,7 @@ class DashboardTab(LoggerMixin):
             self.logger.error(f"Error actualizando dashboard: {e}")
             if hasattr(self.app, 'update_status'):
                 self.app.update_status("Error actualizando dashboard", "danger")
+            show_error_message("Error", f"Error actualizando dashboard: {str(e)}", self.container)
     
     def _update_main_metrics(self):
         """Actualiza las métricas principales del dashboard"""
@@ -476,11 +479,11 @@ class DashboardTab(LoggerMixin):
                 )
                 
                 # Configurar texto del tipo con emoji según severidad
-                if alert['severity'] == 'CRÍTICO':
+                if alert['severity'] == 'CRITICAL':
                     self.alerts_tree.set(item_id, "Tipo", f"🔴 {tipo}")
-                elif alert['severity'] == 'ALTO':
+                elif alert['severity'] == 'HIGH':
                     self.alerts_tree.set(item_id, "Tipo", f"🟠 {tipo}")
-                elif alert['severity'] == 'MEDIO':
+                elif alert['severity'] == 'MEDIUM':
                     self.alerts_tree.set(item_id, "Tipo", f"🟡 {tipo}")
                 else:
                     self.alerts_tree.set(item_id, "Tipo", f"🟢 {tipo}")
@@ -624,7 +627,7 @@ class DashboardTab(LoggerMixin):
                 show_info_message(
                     "Reporte Generado",
                     f"Reporte de inventario creado:\n{result['filename']}\n\nTamaño: {result['size_mb']} MB",
-                    self.frame
+                    self.container
                 )
             else:
                 self.app.update_status("Error generando reporte", "danger")
@@ -632,7 +635,7 @@ class DashboardTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error generando reporte rápido: {e}")
             self.app.update_status("Error generando reporte", "danger")
-            show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
+            show_error_message("Error", f"Error generando reporte: {str(e)}", self.container)
     
     def _quick_deliveries_report(self):
         """Acción rápida: Generar reporte de entregas"""
@@ -649,7 +652,7 @@ class DashboardTab(LoggerMixin):
                 show_info_message(
                     "Reporte Generado",
                     f"Reporte de entregas creado:\n{result['filename']}\n\nPeríodo: {result['periodo_inicio']} - {result['periodo_fin']}",
-                    self.frame
+                    self.container
                 )
             else:
                 self.app.update_status("Error generando reporte", "danger")
@@ -657,7 +660,7 @@ class DashboardTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error generando reporte de entregas: {e}")
             self.app.update_status("Error generando reporte", "danger")
-            show_error_message("Error", f"Error generando reporte: {str(e)}", self.frame)
+            show_error_message("Error", f"Error generando reporte: {str(e)}", self.container)
     
     def _quick_backup(self):
         """Acción rápida: Crear backup manual"""
@@ -673,7 +676,7 @@ class DashboardTab(LoggerMixin):
                 show_info_message(
                     "Backup Creado",
                     f"Backup manual creado exitosamente:\n{result['backup_info']['filename']}\n\nTamaño: {result['backup_info']['size_mb']:.2f} MB",
-                    self.frame
+                    self.container
                 )
             else:
                 self.app.update_status("Error creando backup", "danger")
@@ -681,7 +684,7 @@ class DashboardTab(LoggerMixin):
         except Exception as e:
             self.logger.error(f"Error creando backup rápido: {e}")
             self.app.update_status("Error creando backup", "danger")
-            show_error_message("Error", f"Error creando backup: {str(e)}", self.frame)
+            show_error_message("Error", f"Error creando backup: {str(e)}", self.container)
     
     def _show_all_alerts(self):
         """Muestra todas las alertas en una ventana (vista tabular y coloreada por severidad)"""
@@ -690,7 +693,7 @@ class DashboardTab(LoggerMixin):
             alertas_activas = micro_alertas.obtener_alertas_activas()
 
             if not alertas_activas:
-                show_info_message("Sin Alertas", "No hay alertas activas en el sistema", self.frame)
+                show_info_message("Sin Alertas", "No hay alertas activas en el sistema", self.container)
                 return
 
             # Ventana
@@ -774,7 +777,7 @@ class DashboardTab(LoggerMixin):
 
         except Exception as e:
             self.logger.error(f"Error mostrando todas las alertas: {e}")
-            show_error_message("Error", f"Error cargando alertas: {str(e)}", self.frame)
+            show_error_message("Error", f"Error cargando alertas: {str(e)}", self.container)
     
     
     def _check_alerts(self):
@@ -795,17 +798,17 @@ class DashboardTab(LoggerMixin):
                 show_info_message(
                     "Nuevas Alertas",
                     f"Se encontraron {total_new} nuevas alertas en el sistema",
-                    self.frame
+                    self.container
                 )
             else:
                 self.app.update_status("Sin nuevas alertas", "success")
                 show_info_message(
                     "Verificación Completa",
                     "No se encontraron nuevas alertas",
-                    self.frame
+                    self.container
                 )
                 
         except Exception as e:
             self.logger.error(f"Error verificando alertas: {e}")
             self.app.update_status("Error verificando alertas", "danger")
-            show_error_message("Error", f"Error verificando alertas: {str(e)}", self.frame)
+            show_error_message("Error", f"Error verificando alertas: {str(e)}", self.container)

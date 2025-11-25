@@ -15,6 +15,7 @@ try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import *
     from ttkbootstrap.widgets import DateEntry
+    from ttkbootstrap.scrolled import ScrolledFrame
 except ImportError:
     print("Error: ttkbootstrap requerido")
 
@@ -36,10 +37,14 @@ class ReportesTab(LoggerMixin):
         super().__init__()
         self.parent = parent
         self.app = app_instance
-        
+
         # Crear frame principal
         self.frame = ttk.Frame(parent, padding="15")
-        
+
+        # Crear contenedor con scroll
+        self.container = ScrolledFrame(self.frame, autohide=True)
+        self.container.pack(fill=BOTH, expand=True)
+
         # Variables de control
         self.reportes_list = []
         # Mapeo interno para almacenar datos completos por item del Treeview
@@ -57,25 +62,25 @@ class ReportesTab(LoggerMixin):
         """Crea la interfaz del tab de reportes"""
         
         # Título del tab
-        title_frame = ttk.Frame(self.frame)
+        title_frame = ttk.Frame(self.container)
         title_frame.pack(fill=X, pady=(0, 20))
-        
+
         ttk.Label(
             title_frame,
             text="📄 Gestión de Reportes",
             font=("Helvetica", 16, "bold"),
             bootstyle="primary"
         ).pack(side=LEFT)
-        
+
         ttk.Button(
             title_frame,
             text="🔄 Actualizar Lista",
             command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT)
-        
+
         # Panel principal dividido verticalmente
-        main_paned = ttk.Panedwindow(self.frame, orient=VERTICAL)
+        main_paned = ttk.Panedwindow(self.container, orient=VERTICAL)
         main_paned.pack(fill=BOTH, expand=True)
         
         # Panel superior: Generación de reportes

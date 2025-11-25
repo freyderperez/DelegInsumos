@@ -12,6 +12,7 @@ try:
     import ttkbootstrap as ttk
     from ttkbootstrap.constants import *
     from ttkbootstrap.widgets import DateEntry
+    from ttkbootstrap.scrolled import ScrolledFrame
 except ImportError:
     print("Error: ttkbootstrap requerido")
 
@@ -35,25 +36,29 @@ class EmpleadosTab(LoggerMixin):
         super().__init__()
         self.parent = parent
         self.app = app_instance
-        
+
         # Crear frame principal
         self.frame = ttk.Frame(parent, padding="10")
-        
+
+        # Crear contenedor con scroll
+        self.container = ScrolledFrame(self.frame, autohide=True)
+        self.container.pack(fill=BOTH, expand=True)
+
         # Variables de datos
         self.empleados_list = []
         self.selected_empleado = None
         # Mapeo interno para almacenar datos completos por item del Treeview
         self._item_data = {}
-        
+
         # Variables de formulario
         self._init_form_variables()
-        
+
         # Crear interfaz
         self._create_interface()
-        
+
         # Cargar datos inicial
         self.refresh_data()
-        
+
         self.logger.info("EmpleadosTab inicializado")
     
     def _init_form_variables(self):
@@ -81,42 +86,42 @@ class EmpleadosTab(LoggerMixin):
     
     def _create_interface(self):
         """Crea la interfaz del tab de empleados"""
-        
+
         # Título del tab
-        title_frame = ttk.Frame(self.frame)
+        title_frame = ttk.Frame(self.container)
         title_frame.pack(fill=X, pady=(0, 20))
-        
+
         ttk.Label(
             title_frame,
             text="👥 Gestión de Empleados",
             font=("Helvetica", 16, "bold"),
             bootstyle="primary"
         ).pack(side=LEFT)
-        
+
         ttk.Button(
             title_frame,
             text="🔄 Actualizar",
             command=lambda: self.refresh_data(quick=True),
             bootstyle="outline-primary"
         ).pack(side=RIGHT, padx=(5, 0))
-        
+
         ttk.Button(
             title_frame,
             text="➕ Nuevo Empleado",
             command=self.show_add_form,
             bootstyle="success"
         ).pack(side=RIGHT)
-        
+
         # Panel principal dividido
-        main_paned = ttk.Panedwindow(self.frame, orient=HORIZONTAL)
+        main_paned = ttk.Panedwindow(self.container, orient=HORIZONTAL)
         main_paned.pack(fill=BOTH, expand=True)
-        
+
         # Panel izquierdo: Lista de empleados
         self._create_list_panel(main_paned)
-        
+
         # Panel derecho: Formulario
         self._create_form_panel(main_paned)
-        
+
         self.logger.debug("Interfaz del tab de empleados creada")
     
     def _create_list_panel(self, parent):
@@ -472,7 +477,6 @@ class EmpleadosTab(LoggerMixin):
         
         # Inicialmente ocultar botones de edición
         self.view_deliveries_btn.pack_forget()
-        self.delete_btn.pack_forget()
     
     def refresh_data(self, quick: bool = False):
         """Actualiza la lista de empleados.
@@ -503,7 +507,7 @@ class EmpleadosTab(LoggerMixin):
             self.logger.error(f"Error actualizando datos de empleados: {e}")
             if hasattr(self.app, 'update_status'):
                 self.app.update_status("Error cargando empleados", "danger")
-            show_error_message("Error", f"Error cargando empleados: {str(e)}", self.frame)
+            show_error_message("Error", f"Error cargando empleados: {str(e)}", self.container)
     
     def _apply_filters(self):
         """Aplica filtros a la lista de empleados"""
@@ -663,8 +667,7 @@ class EmpleadosTab(LoggerMixin):
             # Ocultar botones de edición
             self.view_deliveries_btn.pack_forget()
             self.delete_btn.pack_forget()
-            self.delete_btn.pack_forget()
-            
+
             # Cambiar a modo agregar
             self.form_mode_label.config(text="Nuevo Empleado", bootstyle="success")
     
@@ -800,7 +803,8 @@ class EmpleadosTab(LoggerMixin):
         
         # Ocultar botones de edición
         self.view_deliveries_btn.pack_forget()
-        
+        self.delete_btn.pack_forget()
+
         # Cambiar modo
         self.form_mode_label.config(text="Nuevo Empleado", bootstyle="success")
         
@@ -839,12 +843,12 @@ class EmpleadosTab(LoggerMixin):
             
             # Validar datos básicos
             if not form_data['nombre_completo']:
-                show_error_message("Error", "El nombre completo es obligatorio", self.frame)
+                show_error_message("Error", "El nombre completo es obligatorio", self.container)
                 self.form_nombre_entry.focus_set()
                 return
-            
+
             if not form_data['cedula']:
-                show_error_message("Error", "La cédula es obligatoria", self.frame)
+                show_error_message("Error", "La cédula es obligatoria", self.container)
                 self.form_cedula_entry.focus_set()
                 return
             
@@ -873,7 +877,7 @@ class EmpleadosTab(LoggerMixin):
                 if hasattr(self.app, 'update_status'):
                     self.app.update_status(f"Empleado {action_text} exitosamente", "success")
                 
-                show_info_message("Operación Exitosa", result['message'], self.frame)
+                show_info_message("Operación Exitosa", result['message'], self.container)
                 
                 # Actualizar lista y limpiar formulario
                 self.refresh_data()
@@ -882,20 +886,20 @@ class EmpleadosTab(LoggerMixin):
             else:
                 if hasattr(self.app, 'update_status'):
                     self.app.update_status("Error guardando empleado", "danger")
-                show_error_message("Error", "No se pudo guardar el empleado", self.frame)
-                
+                show_error_message("Error", "No se pudo guardar el empleado", self.container)
+
         except ValidationException as e:
-            show_error_message("Error de Validación", f"Error en el campo '{e.field}': {e.message}", self.frame)
-            
+            show_error_message("Error de Validación", f"Error en el campo '{e.field}': {e.message}", self.container)
+
         except DuplicateRecordException as e:
-            show_error_message("Empleado Duplicado", e.message, self.frame)
+            show_error_message("Empleado Duplicado", e.message, self.container)
             self.form_cedula_entry.focus_set()
-            
+
         except Exception as e:
             self.logger.error(f"Error guardando empleado: {e}")
             if hasattr(self.app, 'update_status'):
                 self.app.update_status("Error guardando empleado", "danger")
-            show_error_message("Error", f"Error guardando empleado: {str(e)}", self.frame)
+            show_error_message("Error", f"Error guardando empleado: {str(e)}", self.container)
     
     def _edit_selected_empleado(self):
         """Edita el empleado seleccionado (doble click)"""
@@ -904,41 +908,6 @@ class EmpleadosTab(LoggerMixin):
         if self.selected_empleado:
             self.form_nombre_entry.focus_set()
     
-    def _delete_empleado(self):
-        """Elimina el empleado seleccionado"""
-        if not self.selected_empleado:
-            return
-
-        try:
-            empleado_nombre = self.form_nombre_completo.get()
-
-            # Confirmar eliminación
-            if ask_yes_no(
-                "Confirmar Eliminación",
-                f"¿Está seguro que desea eliminar el empleado?\n\n{empleado_nombre}\n\n"
-                f"El empleado será eliminado permanentemente del sistema.",
-                self.frame
-            ):
-                empleado_id = int(self.form_id.get())
-                result = micro_empleados.eliminar_empleado(empleado_id, soft_delete=False)
-
-                if result['success']:
-                    show_info_message("Empleado Eliminado", result['message'], self.frame)
-
-                    # Actualizar lista y limpiar formulario
-                    self.refresh_data()
-                    self._clear_form()
-
-                    log_user_action("DELETE_EMPLEADO", "empleado_deleted", f"ID: {empleado_id}")
-
-                    if hasattr(self.app, 'update_status'):
-                        self.app.update_status("Empleado eliminado", "success")
-                else:
-                    show_error_message("Error", "No se pudo eliminar el empleado", self.frame)
-
-        except Exception as e:
-            self.logger.error(f"Error eliminando empleado: {e}")
-            show_error_message("Error", f"Error eliminando empleado: {str(e)}", self.frame)
 
     def _view_employee_deliveries(self):
         """Muestra las entregas del empleado seleccionado"""
@@ -952,4 +921,40 @@ class EmpleadosTab(LoggerMixin):
             self.app.notebook.select(3)  # Tab de entregas
             empleado_id = int(self.form_id.get())
             self.app.entregas_tab.filter_by_employee(empleado_id, self.form_nombre_completo.get())
+
+    def _delete_empleado(self):
+        """Elimina el empleado seleccionado"""
+        if not self.selected_empleado:
+            return
+
+        try:
+            empleado_nombre = self.form_nombre_completo.get()
+
+            # Confirmar eliminación
+            if ask_yes_no(
+                "Confirmar Eliminación",
+                f"¿Está seguro que desea eliminar el empleado?\n\n{empleado_nombre}\n\n"
+                f"El empleado será marcado como inactivo pero se mantendrá en el historial.",
+                self.container
+            ):
+                empleado_id = int(self.form_id.get())
+                result = micro_empleados.eliminar_empleado(empleado_id, soft_delete=True)
+
+                if result['success']:
+                    show_info_message("Empleado Eliminado", result['message'], self.container)
+
+                    # Actualizar lista y limpiar formulario
+                    self.refresh_data()
+                    self._clear_form()
+
+                    log_user_action("DELETE_EMPLEADO", "empleado_deleted", f"ID: {empleado_id}")
+
+                    if hasattr(self.app, 'update_status'):
+                        self.app.update_status("Empleado eliminado", "success")
+                else:
+                    show_error_message("Error", "No se pudo eliminar el empleado", self.container)
+
+        except Exception as e:
+            self.logger.error(f"Error eliminando empleado: {e}")
+            show_error_message("Error", f"Error eliminando empleado: {str(e)}", self.container)
     
